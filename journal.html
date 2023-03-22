@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Microjournal</title>
+	<style>
+		body {
+			font-family: sans-serif;
+		}
+
+		form {
+			display: flex;
+			flex-direction: column;
+			margin-bottom: 20px;
+		}
+
+		textarea {
+			height: 100px;
+			margin-bottom: 10px;
+			padding: 5px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			resize: vertical;
+		}
+
+		button {
+			padding: 10px;
+			border: none;
+			border-radius: 5px;
+			background-color: #007bff;
+			color: #fff;
+			font-weight: bold;
+			cursor: pointer;
+		}
+
+		button:hover {
+			background-color: #0069d9;
+		}
+
+		.entry {
+			background-color: #eee;
+			padding: 10px;
+			margin-bottom: 10px;
+		}
+
+		.entry p {
+			margin: 0;
+		}
+
+		.entry span {
+			font-size: 12px;
+			color: #888;
+		}
+	</style>
+</head>
+<body>
+	<div id="entries-container"></div>
+	<form>
+		<textarea id="journal-entry"></textarea>
+		<button id="submit-button" type="submit">Submit</button>
+	</form>
+
+	<script>
+		// Get form elements and entries container
+		const form = document.querySelector('form');
+		const journalEntry = document.querySelector('#journal-entry');
+		const submitButton = document.querySelector('#submit-button');
+		const entriesContainer = document.querySelector('#entries-container');
+
+		// Handle form submission
+		form.addEventListener('submit', function(event) {
+			event.preventDefault(); // prevent default form submission behavior
+
+			// Save journal entry to local storage
+			let entries = localStorage.getItem('entries') ? JSON.parse(localStorage.getItem('entries')) : [];
+			let entry = {
+				text: journalEntry.value,
+				date: new Date()
+			};
+			entries.push(entry);
+			localStorage.setItem('entries', JSON.stringify(entries));
+
+			// Clear journal entry textarea
+			journalEntry.value = '';
+
+			// Display journal entries from today
+			displayEntries();
+		});
+
+		// Display journal entries from today
+		function displayEntries() {
+			entriesContainer.innerHTML = '';
+			let entries = localStorage.getItem('entries') ? JSON.parse(localStorage.getItem('entries')) : [];
+			let today = new Date().toLocaleDateString();
+			for (let i = 0; i < entries.length; i++) {
+				let entry = entries[i];
+				let entryDate = entry.date.toLocaleDateString();
+				if (entryDate === today) {
+					let entryText = entry.text;
+					let entryHTML = `
+						<div class="entry">
+							<p>${entryText}</p>
+							<span>${entry.date.toLocaleTimeString()}</span>
+						</div>
+					`;
+					entriesContainer.insertAdjacentHTML('beforeend', entryHTML);
+				}
+			}
+		}
+
+		// Load existing journal entries from local storage and display them
+		displayEntries();
+	</script>
+</body>
+</html>
