@@ -1,143 +1,110 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="UTF-8">
-	<title>Microjournal</title>
-	<link rel="stylesheet" href="style.css">
-<style>
-	body {
-	font-family: sans-serif;
-	padding-bottom: 70px;
-	overflow-y: scroll;
+	<title>Local Storage Example</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<style>* {
+  outline:1px solid red;
+}
+body {
+  font-family: Arial, sans-serif;
+  max-width:500px;
+  margin:auto;
+  position:fixed;
+  top:0px;
+  bottom:0px;
+  left:0px;
+  right:0px;
 }
 
-form {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	display: flex;
-	align-items: center;
-	padding: 10px;
-	background-color: #fff;
-	box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-	z-index: 1;
+h1 {
+  text-align: center;
 }
 
-textarea {
-	height: 30px;
-	flex: 1;
-	margin-right: 10px;
-	padding: 5px;
-	border: 1px solid #ccc;
-	border-radius: 5px;
-	resize: none;
-	font-size: 14px;
-	line-height: 1.4;
+label {
+  display: block;
+  margin-bottom: 10px;
 }
 
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+#input-holder {
+  width:100%;
+  display:flex;
+  align-items:center;
+  position:absolute;
+  bottom:0px; 
+  height:3em;
+}
+#output-container div {
+  margin-top:3px;
+  padding-top:3px;
+  border-top:1px solid black;
+}
 button {
-	padding: 5px 10px;
-	border: none;
-	border-radius: 5px;
-	background-color: #007bff;
-	color: #fff;
-	font-weight: bold;
-	cursor: pointer;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
 }
 
 button:hover {
-	background-color: #0069d9;
+  background-color: #3e8e41;
 }
 
-#entries-container {
-	padding-bottom: 80px;
+#output-container {
+  overflow-y:scroll;
+  height:calc(100% - 3em);
 }
 
-.entry {
-	background-color: #eee;
-	padding: 10px;
-	margin-bottom: 10px;
+.timestamp {
+  color: #999;
+  font-size: 12px;
+  display:block;
 }
-
-.entry p {
-	margin: 0;
-}
-
-.entry span {
-	font-size: 12px;
-	color: #888;
-}
-</style>
-	</head>
+	</style>
+</head>
 <body>
-	<div id="entries-container"></div>
-	<form>
-		<textarea id="journal-entry"></textarea>
-		<button id="submit-button" type="submit">Submit</button>
-	</form>
-<script>
-// Get form elements and entries container
-const form = document.querySelector('form');
-const journalEntry = document.querySelector('#journal-entry');
-const submitButton = document.querySelector('#submit-button');
-const entriesContainer = document.querySelector('#entries-container');
+	<div id="output-container"></div>
+	<div id="input-holder"><input type="text" id="input-field">
+	<button id="submit-btn">Submit</button>
+  </div>
 
-// Handle form submission
-form.addEventListener('submit', function(event) {
-	event.preventDefault(); // prevent default form submission behavior
+	<script>const inputField = document.getElementById('input-field');
+const submitBtn = document.getElementById('submit-btn');
+const outputContainer = document.getElementById('output-container');
 
-	// Save journal entry to local storage
-	let entries = localStorage.getItem('entries') ? JSON.parse(localStorage.getItem('entries')) : [];
-	let entry = {
-		text: journalEntry.value,
-		date: new Date()
-	};
-	entries.push(entry);
-	localStorage.setItem('entries', JSON.stringify(entries));
-
-	// Clear journal entry textarea
-	journalEntry.value = '';
-
-	// Display new journal entry at the bottom of the entries container
-	displayEntry(entry);
-	entriesContainer.scrollTop = entriesContainer.scrollHeight; // scroll to bottom
+submitBtn.addEventListener('click', () => {
+  const inputValue = inputField.value;
+  if (inputValue) {
+    const timestamp = new Date().toLocaleString();
+    let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
+    itemsArray.push({ text: inputValue, timestamp });
+    localStorage.setItem('items', JSON.stringify(itemsArray));
+    inputField.value = '';
+    renderItems();
+  }
 });
 
-// Handle keydown event on journal entry input
-journalEntry.addEventListener('keydown', function(event) {
-	if (event.keyCode === 13 && !event.shiftKey) { // submit form when Enter key is pressed (without Shift)
-		event.preventDefault(); // prevent default behavior (adding a new line)
-		form.submit(); // submit form
-	}
-});
-
-// Display a single journal entry
-function displayEntry(entry) {
-	let entryText = entry.text;
-	let entryHTML = `
-		<div class="entry">
-			<p>${entryText}</p>
-			<span>${entry.date.toLocaleTimeString()}</span>
-		</div>
-	`;
-	entriesContainer.insertAdjacentHTML('beforeend', entryHTML);
+function renderItems() {
+  let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
+  outputContainer.innerHTML = '';
+  if (itemsArray.length) {
+    itemsArray.forEach((item) => {
+      const itemElement = document.createElement('div');
+      itemElement.innerHTML = `<span class="timestamp">${item.timestamp}</span>${item.text}`;
+      outputContainer.appendChild(itemElement);
+    });
+  } else {
+    outputContainer.innerHTML = 'No items in local storage.';
+  }
 }
-
-// Display all journal entries from today
-function displayEntries() {
-	entriesContainer.innerHTML = '';
-	let entries = localStorage.getItem('entries') ? JSON.parse(localStorage.getItem('entries')) : [];
-	let today = new Date().toLocaleDateString();
-	entries.forEach(function(entry) {
-		if (new Date(entry.date).toLocaleDateString() === today) {
-			displayEntry(entry);
-		}
-	});
-}
-
-// Initial page load
-displayEntries();
-	</script>
+renderItems();
+</script>
 </body>
 </html>
