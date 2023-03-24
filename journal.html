@@ -5,7 +5,7 @@
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0"/>
 
-	<style>* {
+	<style>#nothing {
   outline:1px solid red;
 }
 body {
@@ -31,7 +31,6 @@ label {
 input[type="text"] {
   width: 100%;
   padding: 10px;
-  margin-bottom: 10px;
   box-sizing: border-box;
 }
 #input-holder {
@@ -74,7 +73,7 @@ button:hover {
 <body>
 	<div id="output-container"></div>
 	<div id="input-holder"><input type="text" id="input-field">
-	<button id="submit-btn">Submit</button>
+	<button id="submit-btn">&gt;&gt;</button>
   </div>
 
 	<script>const inputField = document.getElementById('input-field');
@@ -82,6 +81,17 @@ const submitBtn = document.getElementById('submit-btn');
 const outputContainer = document.getElementById('output-container');
 
 submitBtn.addEventListener('click', () => {
+  submitForm();
+});
+
+inputField.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    submitForm();
+  }
+});
+
+function submitForm() {
   const inputValue = inputField.value;
   if (inputValue) {
     const timestamp = new Date().toLocaleString();
@@ -91,7 +101,7 @@ submitBtn.addEventListener('click', () => {
     inputField.value = '';
     renderItems();
   }
-});
+}
 
 function renderItems() {
   let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
@@ -102,11 +112,14 @@ function renderItems() {
       itemElement.innerHTML = `<span class="timestamp">${item.timestamp}</span>${item.text}`;
       outputContainer.appendChild(itemElement);
     });
+    outputContainer.scrollTop = outputContainer.scrollHeight;
   } else {
     outputContainer.innerHTML = 'No items in local storage.';
   }
 }
+
 renderItems();
+
 </script>
 </body>
 </html>
