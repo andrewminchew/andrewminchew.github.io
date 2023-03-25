@@ -5,7 +5,7 @@
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0"/>
 
-	<style>#nothing {
+	<style>nothing {
   outline:1px solid red;
 }
 body {
@@ -17,6 +17,7 @@ body {
   bottom:0px;
   left:0px;
   right:0px;
+  font-size:16px;
 }
 
 h1 {
@@ -30,8 +31,9 @@ label {
 
 input[type="text"] {
   width: 100%;
-  padding: 10px;
   box-sizing: border-box;
+  margin-left:5px;
+  height:2.5em;
 }
 #input-holder {
   width:100%;
@@ -40,11 +42,13 @@ input[type="text"] {
   position:absolute;
   bottom:0px; 
   height:3em;
+  gap:5px;
 }
 #output-container div {
   margin-top:3px;
   padding-top:3px;
   border-top:1px solid black;
+  
 }
 button {
   padding: 10px;
@@ -52,6 +56,9 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+  height:2.5em;
+  width:2.5em;
+  margin-right:5px;
 }
 
 button:hover {
@@ -61,6 +68,7 @@ button:hover {
 #output-container {
   overflow-y:scroll;
   height:calc(100% - 3em);
+  padding:0px 5px;
 }
 
 .timestamp {
