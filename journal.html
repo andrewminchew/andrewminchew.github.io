@@ -1,12 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Local Storage Example</title>
-	<link rel="stylesheet" type="text/css" href="style.css">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0"/>
-
-	<style>nothing {
+	<title>Daily Microjournal</title>
+  	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0"/>
+	<style>
+		nothing {
   outline:1px solid red;
+}
+#disclaimer {
+  position:fixed;
+  background-color:#c4c4c4;
+  max-width:500px;
+}
+#disclaimer * {
+  margin:5px;
+}
+#dismiss-disclaimer {
+  display:block;
+  width:max-content;
+  margin-top:10px;
 }
 body {
   font-family: Arial, sans-serif;
@@ -79,12 +91,25 @@ button:hover {
 	</style>
 </head>
 <body>
+  <div id="disclaimer">
+    <p>DISCLAIMER: This project was created as a personal project and is not intended for production use. While we have made every effort to ensure the quality and security of the code, there may be bugs or vulnerabilities that we are not aware of. Additionally, we cannot guarantee that the performance of the application will meet your expectations. Please use this project at your own risk.
+      <button id="dismiss-disclaimer">I&nbsp;get&nbsp;it.</button>
+    </p>
+  </div>
 	<div id="output-container"></div>
 	<div id="input-holder"><input type="text" id="input-field">
-	<button id="submit-btn">&gt;&gt;</button>
+	<button id="submit-btn">&gt;</button>
   </div>
 
-	<script>const inputField = document.getElementById('input-field');
+	<script>const dismissBtn = document.getElementById('dismiss-disclaimer');
+const disclaimer = document.getElementById('disclaimer');
+
+dismissBtn.addEventListener('click', () => {
+  disclaimer.style.display = 'none';
+});
+
+
+const inputField = document.getElementById('input-field');
 const submitBtn = document.getElementById('submit-btn');
 const outputContainer = document.getElementById('output-container');
 
@@ -127,7 +152,6 @@ function renderItems() {
 }
 
 renderItems();
-
 </script>
 </body>
 </html>
