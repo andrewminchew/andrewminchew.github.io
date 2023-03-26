@@ -49,6 +49,7 @@ function renderItems() {
   } else {
     outputContainer.innerHTML = 'Looks like you have not logged any entries. What&rsquo;s on your mind?';
   }
+  inputField.focus();
 }
 
 renderItems();
