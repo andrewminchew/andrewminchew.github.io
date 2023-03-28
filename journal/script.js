@@ -3,10 +3,16 @@ const inputField = document.getElementById('input-field');
 const submitBtn = document.getElementById('submit-btn');
 const outputContainer = document.getElementById('output-container');
 const dismissBtn = document.getElementById('dismiss-disclaimer');
+const clearBtn = document.getElementById('clear-btn');
 
 dismissBtn.addEventListener('click', () => {
   disclaimer.style.display = 'none';
   localStorage.setItem('disclaimerDismissed', 'true');
+});
+
+clearBtn.addEventListener('click', () => {
+  localStorage.clear();
+  renderItems();
 });
 
 if (localStorage.getItem('disclaimerDismissed') === 'true') {
