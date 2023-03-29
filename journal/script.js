@@ -59,3 +59,19 @@ function renderItems() {
 }
 
 renderItems();
+
+let windowHeight = window.innerHeight;
+window.addEventListener('resize', () => {
+  if (windowHeight > window.innerHeight) {
+    // Keyboard is displayed
+    document.body.style.height = 'auto';
+    document.body.style.overflow = 'hidden';
+    const height = window.innerHeight + 'px';
+    document.body.style.height = height;
+  } else {
+    // Keyboard is hidden
+    document.body.style.height = 'auto';
+    document.body.style.overflow = 'auto';
+  }
+  windowHeight = window.innerHeight;
+});
