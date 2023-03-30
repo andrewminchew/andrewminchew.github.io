@@ -77,8 +77,11 @@
   
   #output-container {
     overflow-y:scroll;
-    height:calc(100% - 6em - 25px);
+    height:calc(100% - 9em);
     padding:0px 5px;
+    display:flex;
+    flex-direction: column;
+    justify-content: flex-end;
   }
   
   .timestamp {
@@ -87,7 +90,10 @@
     display:block;
   }
   @supports (-webkit-touch-callout: none) {
-    body {
-      min-height: -webkit-fill-available;
+    #input-holder {
+      bottom:30px;
+    }
+    #output-container {
+      height: calc(100% - 9em - 30px);
   }
   }
