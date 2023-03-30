@@ -22,16 +22,16 @@
   <meta name="description" content="Just a little project I put together with ChatGPT.">
 
   <!-- Facebook Meta Tags -->
-  <meta property="og:url" content="https://andrewminchew.com/journal.html">
+  <meta property="og:url" content="https://andrewminchew.com/journal">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Daily Microjournal with Chat GPT">
+  <meta property="og:title" content="Daily Microjournal created with the help of Chat GPT">
   <meta property="og:description" content="Just a little project I put together with ChatGPT.">
 
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="twitter:domain" content="andrewminchew.com">
-  <meta property="twitter:url" content="https://andrewminchew.com/journal.html">
-  <meta name="twitter:title" content="Daily Microjournal with Chat GPT">
+  <meta property="twitter:url" content="https://andrewminchew.com/journal">
+  <meta name="twitter:title" content="Daily Microjournal created with the help of Chat GPT">
   <meta name="twitter:description" content="Just a little project I put together with ChatGPT.">
 
   <!-- Meta Tags Generated via https://www.opengraph.xyz -->
@@ -42,17 +42,36 @@
 </head>
 <body id="debug">
   <div id="disclaimer">
-    <p>DISCLAIMER: This project was created as a personal project and is not intended for production use. While we have made every effort to ensure the quality and security of the code, there may be bugs or vulnerabilities that we are not aware of. Additionally, we cannot guarantee that the performance of the application will meet your expectations. Please use this project at your own risk.
-      <button id="dismiss-disclaimer">I&nbsp;get&nbsp;it.</button>
+    <h1>Andrew Minchew's Micro Journal App Project</h1>
+    <p>DISCLAIMER: This is a personal project and is not intended for production use. While I have made every effort to ensure the quality and security of the code, there may be bugs or vulnerabilities that I am not aware of. Additionally, I cannot guarantee that the performance of the application will meet your expectations. Please use this project at your own risk.
     </p>
+    <button id="dismiss-disclaimer">I&nbsp;get&nbsp;it.</button>
   </div>
-  <button id="clear-btn">Delete&nbsp;all&nbsp;entries</button>
+  <div id="settings">
+    <button id="close-settings">Close settings X</button>
+    <h2>Settings</h2>
+    <span>Version 0.1.001</span> 
+    <h3>Feedback and subcribe</h3>
+    <p>To share your thoughts and optionally subscribe to updates <a href="https://forms.gle/hVBMLWwpyHXtwkxc8" target="_blank">click here</a>.
+    </p>
+    <h3>Reload resources</h3>
+    <p>If you bookmarked this to your homescreen, you can use this button to pull the most recent version of the app.</p>
+    <button id="reload-btn">Reload&nbsp;resources</button>
+    <h3>Delete entries</h3>
+    <p>If you've processed all your entries and want to clear your log, you can use the button below to delete all your entries.</p>
+    
+    <button id="clear-btn">Delete&nbsp;all&nbsp;entries</button>
+    <h2>About</h2>
 
-  <button id="reload-btn">Reload&nbsp;resources</button>
-  <span>version timestamp 2023-03-29 214900</span>
-	<div id="output-container"></div>
+    <p>For a while now I've wanted a simple, journal-like tool for logging my day. Something to document all the little questions I ask myself and forget to research later, to hold the partially formed ideas that come exactly when I don't have time to act on them, to record all the 2 minute tasks that inevitably balloon into something more complicated. Something like twitter, but not public; like Day One, but not so formal; like Stickies.app but less cluttered; like a plain text file, but with timestamps and auto-save.</p>
+    
+    <p>ChatGPT and a few hours later, here we are. You can read a little longer backstory over on my <a href="https://www.linkedin.com/pulse/using-chatgpt-make-my-own-micro-journaling-tool-andrew-minchew">LinkedIn profile</a>.</p>    
+  </div>
+  <button id="open-settings">Settings</button>
+
+  <div id="output-container"></div>
 	<div id="input-holder"><input type="text" id="input-field">
-	<button id="submit-btn">&gt;</button>
+	<button id="submit-btn">LOG IT!</button>
   </div>
 
 	<script src="script.js"></script>

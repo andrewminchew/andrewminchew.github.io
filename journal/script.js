@@ -5,10 +5,23 @@ const outputContainer = document.getElementById('output-container');
 const dismissBtn = document.getElementById('dismiss-disclaimer');
 const clearBtn = document.getElementById('clear-btn');
 const reloadBtn = document.getElementById('reload-btn');
+const closeSettingsBtn = document.getElementById('close-settings');
+const settings = document.getElementById('settings');
+const openSettingsBtn = document.getElementById('open-settings');
+
 
 reloadBtn.addEventListener('click', () => {
   location.reload();
 });
+
+closeSettingsBtn.addEventListener('click', () => {
+  settings.style.display = 'none';
+});
+
+openSettingsBtn.addEventListener('click', () => {
+  settings.style.display = 'block';
+});
+
 
 dismissBtn.addEventListener('click', () => {
   disclaimer.style.display = 'none';
