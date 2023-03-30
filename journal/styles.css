@@ -13,7 +13,7 @@
   left: 0px;
   right: 0px;
   overflow-y: scroll;
-  margin:auto;
+  margin: auto;
 }
 
 #settings {
@@ -28,7 +28,7 @@
   left: 0px;
   right: 0px;
   overflow-y: scroll;
-  margin:auto;
+  margin: auto;
 }
 
 h1 {
@@ -79,7 +79,7 @@ input[type="text"] {
   display: flex;
   align-items: stretch;
   gap: 5px;
-  padding:5px;
+  padding: 5px;
 }
 
 #output-container div {
@@ -96,7 +96,7 @@ button:not(#submit-btn) {
   cursor: pointer;
   height: 3em;
   width: 100%;
-  display:block;
+  display: block;
   text-transform: uppercase;
 }
 
@@ -107,7 +107,7 @@ button:not(#submit-btn) {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  flex-grow:100;
+  flex-grow: 100;
 }
 
 .timestamp {
@@ -115,33 +115,47 @@ button:not(#submit-btn) {
   font-size: 12px;
   display: block;
 }
+
 #iosCorrector {
-  width:100%;
-  height:30px;
-  display:none;
+  width: 100%;
+  height: 30px;
+  display: none;
   background-color: black;
 }
 
 @supports (-webkit-touch-callout: none) {
+
   /* #input-holder {
     bottom: 30px;
   } */
   #iosCorrector {
-    display:block;
+    display: block;
   }
-  
-}
-@media (prefers-color-scheme: dark) {
-body {
-  background-color: black;
-  color:white;
-}
-input[type="text"] {
-  background-color: black;
-  color:white;
-}
-#output-container div {
-  border-top: 1px solid white;
+
 }
 
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: black;
+    color: white;
+  }
+
+  input[type="text"] {
+    background-color: black;
+    color: white;
+  }
+
+  #output-container div {
+    border-top: 1px solid white;
+  }
+
+  #settings,
+  #disclaimer {
+    background-color: black;
+    color: white;
+  }
+
+  button:not(#submit-btn) {
+    color: white;
+  }
 }
