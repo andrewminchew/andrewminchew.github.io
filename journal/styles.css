@@ -124,14 +124,12 @@ button:not(#submit-btn) {
 }
 
 @supports (-webkit-touch-callout: none) {
-
-  /* #input-holder {
-    bottom: 30px;
-  } */
-  #iosCorrector {
-    display: block;
+  #input-holder {
+    margin-bottom: 35px;
   }
-
+  #input-holder:focus-within {
+    margin-bottom: 0px;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
