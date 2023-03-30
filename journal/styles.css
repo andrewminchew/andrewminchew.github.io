@@ -57,6 +57,7 @@ body {
   font-size: 16px;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
 }
 
 h1 {
@@ -100,12 +101,19 @@ button:not(#submit-btn) {
   text-transform: uppercase;
 }
 
+button#open-settings {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: min-content;
+  border-radius: 1.5em;
+  box-shadow: 5px 5px 10px black;
+}
+
 #output-container {
   overflow-y: scroll;
-  height: calc(100% - 9em);
   padding: 0px 5px;
   display: block;
-  flex-grow: 100;
 }
 
 .timestamp {
@@ -125,6 +133,7 @@ button:not(#submit-btn) {
   #input-holder {
     margin-bottom: 35px;
   }
+
   #input-holder:focus-within {
     margin-bottom: 0px;
   }
