@@ -4,6 +4,11 @@ const submitBtn = document.getElementById('submit-btn');
 const outputContainer = document.getElementById('output-container');
 const dismissBtn = document.getElementById('dismiss-disclaimer');
 const clearBtn = document.getElementById('clear-btn');
+const reloadBtn = document.getElementById('reload-btn');
+
+reloadBtn.addEventListener('click', () => {
+  location.reload();
+});
 
 dismissBtn.addEventListener('click', () => {
   disclaimer.style.display = 'none';
@@ -60,18 +65,3 @@ function renderItems() {
 
 renderItems();
 
-let windowHeight = window.innerHeight;
-window.addEventListener('resize', () => {
-  if (windowHeight > window.innerHeight) {
-    // Keyboard is displayed
-    document.body.style.height = 'auto';
-    document.body.style.overflow = 'hidden';
-    const height = window.innerHeight + 'px';
-    document.body.style.height = height;
-  } else {
-    // Keyboard is hidden
-    document.body.style.height = 'auto';
-    document.body.style.overflow = 'auto';
-  }
-  windowHeight = window.innerHeight;
-});
