@@ -8,7 +8,21 @@ const reloadBtn = document.getElementById('reload-btn');
 const closeSettingsBtn = document.getElementById('close-settings');
 const settings = document.getElementById('settings');
 const openSettingsBtn = document.getElementById('open-settings');
+const toggleButton = document.getElementById('showHideBtn');
 
+toggleButton.textContent = 'Hide All';
+toggleButton.addEventListener('click', function() {
+  const entryElements = document.querySelectorAll('.entry');
+  entryElements.forEach((entry) => {
+    if (entry.style.visibility === 'hidden') {
+      entry.style.visibility = 'visible';
+      toggleButton.textContent = 'Hide All';
+    } else {
+      entry.style.visibility = 'hidden';
+      toggleButton.textContent = 'Show All';
+    }
+  });
+});
 
 reloadBtn.addEventListener('click', () => {
   location.reload();
@@ -53,21 +67,26 @@ function submitForm() {
   if (inputValue) {
     const timestamp = new Date().toLocaleString();
     let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
-    itemsArray.push({ text: inputValue, timestamp });
+    itemsArray.push({ text: inputValue, timestamp, visibility: "show" });
     localStorage.setItem('items', JSON.stringify(itemsArray));
     inputField.value = '';
     renderItems();
   }
 }
 
+
 function renderItems() {
   let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
   outputContainer.innerHTML = '';
   if (itemsArray.length) {
-    itemsArray.forEach((item) => {
-      const itemElement = document.createElement('div');
-      itemElement.innerHTML = `<span class="timestamp">${item.timestamp}</span>${item.text}`;
-      outputContainer.appendChild(itemElement);
+    itemsArray.forEach(function (item) {
+      if (item.visibility !== "hide") {
+        const itemElement = document.createElement('div');
+        itemElement.classList.add('entry');
+        itemElement.setAttribute('tabindex', '-1');
+        itemElement.innerHTML = `<span class="timestamp">${item.timestamp}</span>${item.text}`;
+        outputContainer.appendChild(itemElement);
+      }
     });
     outputContainer.scrollTop = outputContainer.scrollHeight;
   } else {

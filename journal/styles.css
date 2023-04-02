@@ -44,6 +44,12 @@ h1 {
   width: max-content;
   margin-top: 10px;
 }
+.entry {
+  visibility: show;
+}
+.entry:focus {
+  outline:1px solid green;
+}
 
 body {
   font-family: Arial, sans-serif;
@@ -89,7 +95,7 @@ input[type="text"] {
   border-top: 1px solid black;
 }
 
-button:not(#submit-btn) {
+button:not(#submit-btn, #showHideBtn) {
   padding: 10px;
   background-color: #1f88c4;
   color: white;
