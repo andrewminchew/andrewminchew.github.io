@@ -2,53 +2,9 @@
   outline: 1px solid red;
 }
 
-#disclaimer {
-  position: fixed;
-  background-color: #dedede;
-  max-width: 500px;
-  top: 0px;
-  bottom: 0px;
-  z-index: 1;
-  padding: 45px;
-  left: 0px;
-  right: 0px;
-  overflow-y: scroll;
-  margin: auto;
-}
-
-#settings {
-  position: fixed;
-  display: none;
-  background-color: #dedede;
-  max-width: 500px;
-  top: 0px;
-  bottom: 0px;
-  z-index: 1;
-  padding: 45px;
-  left: 0px;
-  right: 0px;
-  overflow-y: scroll;
-  margin: auto;
-}
-
 h1 {
   text-align: left;
-}
-
-#disclaimer * {
-  margin: 5px;
-}
-
-#dismiss-disclaimer {
-  display: block;
-  width: max-content;
-  margin-top: 10px;
-}
-.entry {
-  visibility: show;
-}
-.entry:focus {
-  outline:1px solid green;
+  text-align: center;
 }
 
 body {
@@ -66,36 +22,7 @@ body {
   justify-content: flex-end;
 }
 
-h1 {
-  text-align: center;
-}
-
-label {
-  display: block;
-  margin-bottom: 10px;
-}
-
-input[type="text"] {
-  flex-grow: 100;
-  box-sizing: border-box;
-  margin-left: 5px;
-  font-size: 18px;
-}
-
-#input-holder {
-  display: flex;
-  align-items: stretch;
-  gap: 5px;
-  padding: 5px;
-}
-
-#output-container div {
-  margin-top: 3px;
-  padding-top: 3px;
-  border-top: 1px solid black;
-}
-
-button:not(#submit-btn, #showHideBtn) {
+button {
   padding: 10px;
   background-color: #1f88c4;
   color: white;
@@ -105,15 +32,43 @@ button:not(#submit-btn, #showHideBtn) {
   width: 100%;
   display: block;
   text-transform: uppercase;
+  width:max-content;
+  border-radius: 1.5em;
+  margin:auto;
 }
 
-button#open-settings {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: min-content;
-  border-radius: 1.5em;
-  box-shadow: 5px 5px 10px black;
+/* SETTINGS, DISCLAIMER OVERLAYS */
+
+.overlay {
+  position: fixed;
+  background-color: #dedede;
+  max-width: 500px;
+  top: 0px;
+  bottom: 0px;
+  z-index: 1;
+  padding: 45px;
+  left: 0px;
+  right: 0px;
+  overflow-y: scroll;
+  margin: auto;
+}
+
+
+#settings {
+  display: none;
+}
+
+/* OUTPUT AREA */
+
+.entry {
+  visibility: show;
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid black;
+}
+
+.entry:focus {
+  outline:1px solid green;
 }
 
 #output-container {
@@ -128,19 +83,53 @@ button#open-settings {
   display: block;
 }
 
-#iosCorrector {
-  width: 100%;
-  height: 30px;
-  display: none;
-  background-color: black;
+button.floating {
+  position: absolute;
+  width: min-content;
+  border-radius: 1.5em;
+  box-shadow: 5px 5px 10px black;
+  width:45px;
+  height: 45px;
+}
+button.floating img {
+  width:100%;
+}
+#open-settings {
+  top:15px;
+  right:15px;
+}
+#showHideBtn {
+  bottom:60px;
+  right:15px;
 }
 
+
+/* INPUT AREA */
+
+
+#input-holder {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  padding: 5px;
+}
+input[type="text"] {
+  flex-grow: 100;
+  box-sizing: border-box;
+  margin-left: 5px;
+  font-size: 18px;
+}
+#submit-btn {
+  height: 3em;
+  margin-top: 3px;
+  }
+
 @supports (-webkit-touch-callout: none) {
-  #input-holder {
+  #input-holder input {
     margin-bottom: 35px;
   }
 
-  #input-holder:focus-within {
+  #input-holder input:focus {
     margin-bottom: 0px;
   }
 }

@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-  gtag('config', 'G-4G2XVZVG0Y');
-</script>
+    gtag('config', 'G-4G2XVZVG0Y');
+  </script>
 
-	<title>Daily Microjournal</title>
-  	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0"/>
-	
-    <link rel="apple-touch-icon" href="img/pencil.png">
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <link rel="stylesheet" href="styles.css">
-    <!-- HTML Meta Tags -->
+  <title>Daily Microjournal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0" />
+
+  <link rel="apple-touch-icon" href="img/pencil.png">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="stylesheet" href="styles.css">
+  <!-- HTML Meta Tags -->
   <title>Daily Microjournal with Chat GPT</title>
   <meta name="description" content="Just a little project I put together with ChatGPT.">
 
@@ -35,44 +36,58 @@
   <meta name="twitter:description" content="Just a little project I put together with ChatGPT.">
 
   <!-- Meta Tags Generated via https://www.opengraph.xyz -->
-        
-	<style>
 
-	</style>
+  <style>
+
+  </style>
 </head>
+
 <body id="debug">
-  <div id="disclaimer">
+  <div class="overlay" id="disclaimer">
     <h1>Andrew Minchew's Micro Journal App Project</h1>
-    <p>DISCLAIMER: This is a personal project and is not intended for production use. While I have made every effort to ensure the quality and security of the code, there may be bugs or vulnerabilities that I am not aware of. Additionally, I cannot guarantee that the performance of the application will meet your expectations. Please use this project at your own risk.
+    <p>DISCLAIMER: This is a personal project and is not intended for production use. While I have made every effort to
+      ensure the quality and security of the code, there may be bugs or vulnerabilities that I am not aware of.
+      Additionally, I cannot guarantee that the performance of the application will meet your expectations. Please use
+      this project at your own risk.
     </p>
     <button id="dismiss-disclaimer">I&nbsp;get&nbsp;it.</button>
   </div>
-  <div id="settings">
+  <div class="overlay" id="settings">
     <button id="close-settings">Close settings X</button>
     <h2>Settings</h2>
     <h3>Feedback and subcribe</h3>
-    <p>To share your thoughts and optionally subscribe to updates <a href="https://forms.gle/hVBMLWwpyHXtwkxc8" target="_blank">click here</a>.
+    <p>To share your thoughts and optionally subscribe to updates <a href="https://forms.gle/hVBMLWwpyHXtwkxc8"
+        target="_blank">click here</a>.
     </p>
     <h3>Reload resources</h3>
-    <p>If you bookmarked this to your homescreen, you can use this button to pull the most recent version of the app.</p>
+    <p>If you bookmarked this to your homescreen, you can use this button to pull the most recent version of the app.
+    </p>
     <button id="reload-btn">Reload&nbsp;resources</button>
     <h3>Delete entries</h3>
-    <p>If you've processed all your entries and want to clear your log, you can use the button below to delete all your entries.</p>
-    
+    <p>If you've processed all your entries and want to clear your log, you can use the button below to delete all your
+      entries.</p>
+
     <button id="clear-btn">Delete&nbsp;all&nbsp;entries</button>
     <h2>About</h2>
 
-    <p>For a while now I've wanted a simple, journal-like tool for logging my day. Something to document all the little questions I ask myself and forget to research later, to hold the partially formed ideas that come exactly when I don't have time to act on them, to record all the 2 minute tasks that inevitably balloon into something more complicated. Something like twitter, but not public; like Day One, but not so formal; like Stickies.app but less cluttered; like a plain text file, but with timestamps and auto-save.</p>
-    
-    <p>ChatGPT and a few hours later, here we are. You can read a little longer backstory over on my <a href="https://www.linkedin.com/pulse/using-chatgpt-make-my-own-micro-journaling-tool-andrew-minchew">LinkedIn profile</a>.</p>    
-  </div>
-  <button id="open-settings">Settings</button>
+    <p>For a while now I've wanted a simple, journal-like tool for logging my day. Something to document all the little
+      questions I ask myself and forget to research later, to hold the partially formed ideas that come exactly when I
+      don't have time to act on them, to record all the 2 minute tasks that inevitably balloon into something more
+      complicated. Something like twitter, but not public; like Day One, but not so formal; like Stickies.app but less
+      cluttered; like a plain text file, but with timestamps and auto-save.</p>
 
+    <p>ChatGPT and a few hours later, here we are. You can read a little longer backstory over on my <a
+        href="https://www.linkedin.com/pulse/using-chatgpt-make-my-own-micro-journaling-tool-andrew-minchew">LinkedIn
+        profile</a>.</p>
+  </div>
+  <button class="floating" id="open-settings"><img src="img/settings.svg"></button>
+  <button class="floating" id="showHideBtn"><img src="img/hide.svg"></button>
   <div id="output-container"></div>
-	<div id="input-holder"><input type="text" id="input-field">
-	<button id="submit-btn">LOG IT!</button><button id="showHideBtn">Hide All</button>
+  <div id="input-holder"><input type="text" id="input-field">
+    <button id="submit-btn">LOG IT!</button>
 
   </div>
-	<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
+
 </html>

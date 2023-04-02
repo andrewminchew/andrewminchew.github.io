@@ -10,16 +10,16 @@ const settings = document.getElementById('settings');
 const openSettingsBtn = document.getElementById('open-settings');
 const toggleButton = document.getElementById('showHideBtn');
 
-toggleButton.textContent = 'Hide All';
+toggleButton.innerHTML = '<img src="img/hide.svg">';
 toggleButton.addEventListener('click', function() {
   const entryElements = document.querySelectorAll('.entry');
   entryElements.forEach((entry) => {
     if (entry.style.visibility === 'hidden') {
       entry.style.visibility = 'visible';
-      toggleButton.textContent = 'Hide All';
+      toggleButton.innerHTML = '<img src="img/hide.svg">';
     } else {
       entry.style.visibility = 'hidden';
-      toggleButton.textContent = 'Show All';
+      toggleButton.innerHTML = '<img src="img/show.svg">';
     }
   });
 });
