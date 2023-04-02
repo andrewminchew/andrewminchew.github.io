@@ -30,7 +30,7 @@ if (/Mobi/.test(navigator.userAgent)) {
   });
 
   inputField.addEventListener('blur', () => {
-    showHideBtn.style.bottom = '5px';
+    showHideBtn.style.bottom = '60px';
   });
 }
 
