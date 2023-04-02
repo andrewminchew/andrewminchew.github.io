@@ -8,21 +8,31 @@ const reloadBtn = document.getElementById('reload-btn');
 const closeSettingsBtn = document.getElementById('close-settings');
 const settings = document.getElementById('settings');
 const openSettingsBtn = document.getElementById('open-settings');
-const toggleButton = document.getElementById('showHideBtn');
+const showHideBtn = document.getElementById('showHideBtn');
 
-toggleButton.innerHTML = '<img src="img/hide.svg">';
-toggleButton.addEventListener('click', function() {
+showHideBtn.innerHTML = '<img src="img/hide.svg">';
+showHideBtn.addEventListener('click', function() {
   const entryElements = document.querySelectorAll('.entry');
   entryElements.forEach((entry) => {
     if (entry.style.visibility === 'hidden') {
       entry.style.visibility = 'visible';
-      toggleButton.innerHTML = '<img src="img/hide.svg">';
+      showHideBtn.innerHTML = '<img src="img/hide.svg">';
     } else {
       entry.style.visibility = 'hidden';
-      toggleButton.innerHTML = '<img src="img/show.svg">';
+      showHideBtn.innerHTML = '<img src="img/show.svg">';
     }
   });
 });
+
+if (/Mobi/.test(navigator.userAgent)) {
+  inputField.addEventListener('focus', () => {
+    showHideBtn.style.bottom = '95px';
+  });
+
+  inputField.addEventListener('blur', () => {
+    showHideBtn.style.bottom = '5px';
+  });
+}
 
 reloadBtn.addEventListener('click', () => {
   location.reload();
