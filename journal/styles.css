@@ -75,6 +75,7 @@ button {
   overflow-y: scroll;
   padding: 0px 5px;
   display: block;
+  visibility:visible;
 }
 
 .timestamp {
@@ -99,7 +100,7 @@ button.floating img {
   right:15px;
 }
 #showHideBtn {
-  bottom:60px;
+  top:75px;
   right:15px;
 }
 

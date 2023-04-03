@@ -10,18 +10,15 @@ const settings = document.getElementById('settings');
 const openSettingsBtn = document.getElementById('open-settings');
 const showHideBtn = document.getElementById('showHideBtn');
 
-showHideBtn.innerHTML = '<img src="img/hide.svg">';
+// showHideBtn.innerHTML = '<img src="img/hide.svg">';
 showHideBtn.addEventListener('click', function() {
-  const entryElements = document.querySelectorAll('.entry');
-  entryElements.forEach((entry) => {
-    if (entry.style.visibility === 'hidden') {
-      entry.style.visibility = 'visible';
+    if (document.getElementById('output-container').style.visibility === 'hidden') {
+      document.getElementById('output-container').style.visibility = 'visible';
       showHideBtn.innerHTML = '<img src="img/hide.svg">';
     } else {
-      entry.style.visibility = 'hidden';
+      document.getElementById('output-container').style.visibility = 'hidden';
       showHideBtn.innerHTML = '<img src="img/show.svg">';
     }
-  });
 });
 
 if (/Mobi/.test(navigator.userAgent)) {
