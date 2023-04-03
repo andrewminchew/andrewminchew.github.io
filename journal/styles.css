@@ -67,9 +67,28 @@ button {
   border-top: 1px solid black;
 }
 
-.entry:focus {
-  outline:1px solid green;
+.toolbar button {
+  width: calc((100% - 75px) / 2);
+  margin-top:5px;
+  margin-bottom:5px;
 }
+
+.toolbar {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  background: gray;
+  height:0px;
+  overflow:hidden;
+  transition:ease 500ms;
+  /* gap: 25px; */
+}
+
+/* .entry:focus .toolbar {
+  height:50px;
+}
+*/
 
 #output-container {
   overflow-y: scroll;
@@ -146,7 +165,7 @@ input[type="text"] {
     color: white;
   }
 
-  #output-container div {
+  .entry {
     border-top: 1px solid white;
   }
 
@@ -156,7 +175,4 @@ input[type="text"] {
     color: white;
   }
 
-  button:not(#submit-btn) {
-    color: white;
-  }
 }

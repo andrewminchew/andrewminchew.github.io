@@ -9,8 +9,9 @@ const closeSettingsBtn = document.getElementById('close-settings');
 const settings = document.getElementById('settings');
 const openSettingsBtn = document.getElementById('open-settings');
 const showHideBtn = document.getElementById('showHideBtn');
+const deleteEntryBtn = document.getElementById('delete-entry');
+const hideEntryBtn = document.getElementById('hide-entry');
 
-// showHideBtn.innerHTML = '<img src="img/hide.svg">';
 showHideBtn.addEventListener('click', function() {
     if (document.getElementById('output-container').style.visibility === 'hidden') {
       document.getElementById('output-container').style.visibility = 'visible';
@@ -20,16 +21,6 @@ showHideBtn.addEventListener('click', function() {
       showHideBtn.innerHTML = '<img src="img/show.svg">';
     }
 });
-
-if (/Mobi/.test(navigator.userAgent)) {
-  inputField.addEventListener('focus', () => {
-    showHideBtn.style.bottom = '95px';
-  });
-
-  inputField.addEventListener('blur', () => {
-    showHideBtn.style.bottom = '60px';
-  });
-}
 
 reloadBtn.addEventListener('click', () => {
   location.reload();
@@ -81,7 +72,6 @@ function submitForm() {
   }
 }
 
-
 function renderItems() {
   let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
   outputContainer.innerHTML = '';
@@ -91,7 +81,8 @@ function renderItems() {
         const itemElement = document.createElement('div');
         itemElement.classList.add('entry');
         itemElement.setAttribute('tabindex', '-1');
-        itemElement.innerHTML = `<span class="timestamp">${item.timestamp}</span>${item.text}`;
+        itemElement.innerHTML = `<div class="text"><span class="timestamp">${item.timestamp}</span>${item.text}</div><div class="toolbar"><button id="delete-entry">delete</button><button id="hide-entry">hide</button>
+        </div>`;
         outputContainer.appendChild(itemElement);
       }
     });
