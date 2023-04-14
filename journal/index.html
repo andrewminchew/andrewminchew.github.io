@@ -59,6 +59,9 @@
     <p>To share your thoughts and optionally subscribe to updates <a href="https://forms.gle/hVBMLWwpyHXtwkxc8"
         target="_blank">click here</a>.
     </p>
+    <h3>Reveal hidden entries</h3>
+    <p>If you've hidden entries individually, you can use this button to bring them all back.</p>
+    <button id="show-all-entries">Reveal&nbsp;hidden&nbsp;entries</button>
     <h3>Reload resources</h3>
     <p>If you bookmarked this to your homescreen, you can use this button to pull the most recent version of the app.
     </p>
@@ -86,9 +89,17 @@
   
   </div>
   <div id="input-holder"><input type="text" id="input-field">
-    <button id="submit-btn">LOG IT!</button>
+  <button id="submit-btn">></button>
 
   </div>
+  <div id="date-picker-modal" class="modal">
+    <div class="modal-content">
+      <h2>Select a new date:</h2>
+      <input type="datetime-local" id="new-date-picker">
+      <button id="save-date-btn">Save</button>
+    </div>
+  </div>
+  
   <script src="script.js"></script>
 </body>
 
