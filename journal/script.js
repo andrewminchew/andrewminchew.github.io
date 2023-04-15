@@ -25,12 +25,16 @@ function downloadCsv() {
   
   const csvRows = [['id', 'timestamp', 'text']];
   itemsArray.forEach(item => {
-    const row = [item.id, item.timestamp, item.text];
+    const row = [
+      item.id,
+      new Date(item.timestamp).toLocaleString(undefined, { timeZoneName: 'short' }),
+      `"${item.text.replace(/"/g, '""')}"` // wrap the text value with quotes and escape any existing quotes by doubling them
+    ];
     csvRows.push(row);
   });
   
-  const csvData = csvRows.join('\n');
-  const blob = new Blob([csvData], {type: 'text/csv;charset=utf-8;'});
+  const csvData = csvRows.map(row => row.join(',')).join('\n');
+  const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
