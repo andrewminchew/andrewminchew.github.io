@@ -6,43 +6,124 @@ const dismissBtn = document.getElementById('dismiss-disclaimer');
 const clearBtn = document.getElementById('clear-btn');
 const reloadBtn = document.getElementById('reload-btn');
 const closeSettingsBtn = document.getElementById('close-settings');
-const settings = document.getElementById('settings');
+const settingsPanel = document.getElementById('settings-panel');
 const openSettingsBtn = document.getElementById('open-settings');
 const showHideBtn = document.getElementById('showHideBtn');
 const deleteEntryBtn = document.getElementById('delete-entry');
-const hideEntryBtn = document.getElementById('hide-entry');
-const showAllBtn = document.getElementById('show-all-entries');
 const changeDateBtn = document.getElementById('change-date');
 
-showAllBtn.addEventListener('click', () => {
-  let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
-  itemsArray.forEach((item) => {
-    item.visibility = 'show';
-  });
-  localStorage.setItem('items', JSON.stringify(itemsArray));
-  renderItems();
-});
+/*
+supposed to create settings in json and then set settings.privatemode=true 
 
 showHideBtn.addEventListener('click', function () {
-  if (document.getElementById('output-container').style.visibility === 'hidden') {
-    document.getElementById('output-container').style.visibility = 'visible';
-    showHideBtn.innerHTML = '<img src="img/hide.svg">';
-  } else {
-    document.getElementById('output-container').style.visibility = 'hidden';
+  const settings = JSON.parse(localStorage.getItem('settings'));
+
+  // Toggle privatemode setting
+  settings.privatemode = !settings.privatemode;
+
+  // Save updated settings to localStorage
+  localStorage.setItem('settings', JSON.stringify(settings));
+
+  if (showHideBtn.innerHTML === '<img src="img/hide.svg">') {
     showHideBtn.innerHTML = '<img src="img/show.svg">';
+  } else {
+    showHideBtn.innerHTML = '<img src="img/hide.svg">';
   }
 });
+*/
+
+/*
+then this was supposed to update the state of the button SVG based on whether the setting was true or false
+
+// retrieve privacymode from local storage settings
+const settings = JSON.parse(localStorage.getItem('settings'));
+const privatemode = settings && settings.privatemode;
+
+if (privatemode) {
+  // showHideBtn is toggled when privatemode is true
+  if (showHideBtn.innerHTML === '<img src="img/hide.svg">') {
+    showHideBtn.innerHTML = '<img src="img/show.svg">';
+  } else {
+    showHideBtn.innerHTML = '<img src="img/hide.svg">';
+  }
+} else {
+  // showHideBtn is always set to 'hide' when privatemode is false
+  showHideBtn.innerHTML = '<img src="img/hide.svg">';
+}
+*/
+
+// does this work
+
+const defaultSettings = {
+  privatemode: false
+};
+
+// Check if settings already exist in localStorage
+let settings = localStorage.getItem('settings') ? JSON.parse(localStorage.getItem('settings')) : {};
+
+// Merge default settings with existing settings (if any)
+settings = { ...defaultSettings, ...settings };
+
+// Save settings to localStorage
+localStorage.setItem('settings', JSON.stringify(settings));
+
+showHideBtn.addEventListener('click', function () {
+  const settings = JSON.parse(localStorage.getItem('settings'));
+
+  // Toggle privatemode setting
+  settings.privatemode = !settings.privatemode;
+
+  // Save updated settings to localStorage
+  localStorage.setItem('settings', JSON.stringify(settings));
+
+  const privatemode = settings && settings.privatemode;
+
+  if (privatemode) {
+    // showHideBtn is toggled when privatemode is true
+    if (showHideBtn.innerHTML === '<img src="img/hide.svg">') {
+      showHideBtn.innerHTML = '<img src="img/show.svg">';
+    } else {
+      showHideBtn.innerHTML = '<img src="img/hide.svg">';
+    }
+  } else {
+    // showHideBtn is always set to 'hide' when privatemode is false
+    showHideBtn.innerHTML = '<img src="img/hide.svg">';
+  }
+  renderItems();
+  });
+
+
+
+
+/* this is the current, functioning privacy button
+showHideBtn.addEventListener('click', function () {
+  const textItems = document.querySelectorAll('.text');
+  textItems.forEach(function(item) {
+    if (item.style.transform === 'scaleY(0)') {
+      item.style.transform = 'scaleY(1)';
+    } else {
+      item.style.transform = 'scaleY(0)';
+    }
+  });
+
+  if (showHideBtn.innerHTML === '<img src="img/hide.svg">') {
+    showHideBtn.innerHTML = '<img src="img/show.svg">';
+  } else {
+    showHideBtn.innerHTML = '<img src="img/hide.svg">';
+  }
+});
+*/
 
 reloadBtn.addEventListener('click', () => {
   location.reload();
 });
 
 closeSettingsBtn.addEventListener('click', () => {
-  settings.style.display = 'none';
+  settingsPanel.style.display = 'none';
 });
 
 openSettingsBtn.addEventListener('click', () => {
-  settings.style.display = 'block';
+  settingsPanel.style.display = 'block';
 });
 
 
@@ -62,12 +143,16 @@ if (localStorage.getItem('disclaimerDismissed') === 'true') {
 
 submitBtn.addEventListener('click', () => {
   submitForm();
+  scrollOutputContainer();
+  focusOnInput();
 });
 
 inputField.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
     event.preventDefault();
     submitForm();
+    scrollOutputContainer();
+    focusOnInput();
   }
 });
 
@@ -92,21 +177,6 @@ outputContainer.addEventListener('click', (event) => {
     let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
     // Remove the entry with the matching id from the items array
     itemsArray = itemsArray.filter(item => item.id !== id);
-    localStorage.setItem('items', JSON.stringify(itemsArray));
-    renderItems(); // Refresh the view
-  }
-
-  // Use event delegation to listen for clicks on the hide button
-  if (event.target.id === 'hide-entry') {
-    // Get the id of the parent element of the clicked hide button
-    const id = event.target.closest('.entry').dataset.id;
-    let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
-    // Set the visibility of the entry with the matching id to "hide"
-    itemsArray.forEach(function (item) {
-      if (item.id === id) {
-        item.visibility = "hide";
-      }
-    });
     localStorage.setItem('items', JSON.stringify(itemsArray));
     renderItems(); // Refresh the view
   }
@@ -139,7 +209,7 @@ outputContainer.addEventListener('click', (event) => {
   }
 });
 
-
+/* removing to break out scroll and input focus, and removing visibility check
 function renderItems() {
   let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
   outputContainer.innerHTML = '';
@@ -152,7 +222,7 @@ function renderItems() {
         itemElement.setAttribute('tabindex', '-1');
         itemElement.setAttribute('data-id', `${item.id}`);
         const timestamp = new Date(item.timestamp).toLocaleString(undefined, {timeZoneName: 'short'});
-        itemElement.innerHTML = `<div class="text"><span class="timestamp">${timestamp}</span>${item.text}</div><div class="toolbar"><button id="change-date">change&nbsp;date</button><button id="delete-entry">delete</button><button id="hide-entry">hide</button></div>`;
+        itemElement.innerHTML = `<span class="timestamp">${timestamp}</span><div class="text">${item.text}</div><div class="toolbar"><button id="change-date">change&nbsp;date</button><button id="delete-entry">delete</button><button id="hide-entry">hide</button></div>`;
         outputContainer.appendChild(itemElement);
       }
     });
@@ -162,8 +232,41 @@ function renderItems() {
   }
   inputField.focus();
 }
+*/
 
+function focusOnInput() {
+  inputField.focus();
+}
 
+function scrollOutputContainer() {
+  outputContainer.scrollTop = outputContainer.scrollHeight;
+}
 
+function renderItems() {
+  const settings = JSON.parse(localStorage.getItem('settings')) || { privatemode: false };
+  let itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
+  outputContainer.innerHTML = '';
+  if (itemsArray.length) {
+    itemsArray.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    itemsArray.forEach(function (item) {
+      const itemElement = document.createElement('div');
+      itemElement.classList.add('entry');
+      itemElement.setAttribute('tabindex', '-1');
+      itemElement.setAttribute('data-id', `${item.id}`);
+      const timestamp = new Date(item.timestamp).toLocaleString(undefined, {timeZoneName: 'short'});
+      itemElement.innerHTML = `<span class="timestamp">${timestamp}</span>`;
+      if (!settings.privatemode) {
+        itemElement.innerHTML += `<div class="text">${item.text}</div>`;
+      }
+      itemElement.innerHTML += `<div class="toolbar"><button id="change-date">change&nbsp;date</button><button id="delete-entry">delete</button>`;
+      outputContainer.appendChild(itemElement);
+    });
+  } else {
+    outputContainer.innerHTML = 'Looks like you have not logged any entries. What&rsquo;s on your mind?';
+  }
+}
+
+scrollOutputContainer();
+focusOnInput();
 renderItems();
 

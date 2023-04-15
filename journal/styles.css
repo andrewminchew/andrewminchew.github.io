@@ -54,7 +54,7 @@ button {
 }
 
 
-#settings {
+#settings-panel {
   display: none;
 }
 
@@ -65,6 +65,10 @@ button {
   margin-top: 3px;
   padding-top: 3px;
   border-top: 1px solid black;
+}
+.text {
+  transform:scaleY(1);
+  transition:.25s ease;
 }
 
 .toolbar button {
@@ -168,7 +172,7 @@ input[type="text"] {
     border-top: 1px solid white;
   }
 
-  #settings,
+  #settings-panel,
   #disclaimer {
     background-color: black;
     color: white;
