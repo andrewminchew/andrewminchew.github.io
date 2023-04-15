@@ -11,6 +11,36 @@ const openSettingsBtn = document.getElementById('open-settings');
 const showHideBtn = document.getElementById('showHideBtn');
 const deleteEntryBtn = document.getElementById('delete-entry');
 const changeDateBtn = document.getElementById('change-date');
+const downloadEntriesBtn = document.getElementById('download-csv');
+
+downloadEntriesBtn.addEventListener('click', downloadCsv);
+
+function downloadCsv() {
+  const itemsArray = localStorage.getItem('items') ? JSON.parse(localStorage.getItem('items')) : [];
+  
+  if (!itemsArray.length) {
+    alert('There are no items to export.');
+    return;
+  }
+  
+  const csvRows = [['id', 'timestamp', 'text']];
+  itemsArray.forEach(item => {
+    const row = [item.id, item.timestamp, item.text];
+    csvRows.push(row);
+  });
+  
+  const csvData = csvRows.join('\n');
+  const blob = new Blob([csvData], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'items.csv');
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 
 /*
 supposed to create settings in json and then set settings.privatemode=true 
