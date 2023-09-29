@@ -13,7 +13,8 @@ body {
   margin: auto;
   position: fixed;
   top: 0px;
-  bottom: 0px;
+  /* bottom: 0px; removing to test 100dvh height */
+  height:100dvh;
   left: 0px;
   right: 0px;
   font-size: 16px;
@@ -24,7 +25,7 @@ body {
 
 button {
   padding: 10px;
-  background-color: #1f88c4;
+  background-color: #3cc41f;
   color: white;
   border: none;
   cursor: pointer;
@@ -148,6 +149,7 @@ input[type="text"] {
   margin-top: 3px;
   }
 
+/* removing to test 100dvh body height response to input targeting
 @supports (-webkit-touch-callout: none) {
   #input-holder input {
     margin-bottom: 35px;
@@ -157,7 +159,7 @@ input[type="text"] {
     margin-bottom: 0px;
   }
 }
-
+*/
 @media (prefers-color-scheme: dark) {
   body {
     background-color: black;
