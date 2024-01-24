@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * {
+        font-family:sans-serif;
+        transition:300ms;
+      }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            position: relative;
+          width:calc(100% / 7);
+        }
+      tr {
+        display:flex;
+      }
+      body {
+        padding:unset;
+        margin:unset;
+        background-color: white;
+      }
+      .title-days {
+        width:100%;
+        display:flex;
+        position:fixed;
+        background:black;
+        color:white;
+        z-index:1;
+      }
+      .title-day {
+        width:calc(100% / 7);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        padding:3px;
+        
+      }
+
+        .today {
+            background-color: #aaf !important;
+            font-weight: bold;
+        }
+
+        .date-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .month, .year {
+            opacity:0%;
+        }
+
+        .date-cell:hover .month, .date-cell:hover .year {
+            opacity:100%;
+        }
+
+      .month-cell {
+        background-color:lightgray;
+      }
+        .month-cell .month, .month-cell .year {
+            opacity:100%;
+        }
+    </style>
+</head>
+<body>
+  <div class="title-days">
+    <div class="title-day">SUN</div>
+    <div class="title-day">MON</div>    <div class="title-day">TUE</div>    <div class="title-day">WED</div>    <div class="title-day">THU</div>    <div class="title-day">FRI</div>    <div class="title-day">SAT</div>  
+  </div>
+  <table>
+        <tbody id="dateGridBody">
+            <!-- Dates will be inserted here dynamically -->
+        </tbody>
+    </table>
+
+    <script>
+        function generateDateGrid() {
+            var startDate = new Date();
+            startDate.setDate(startDate.getDate() - 371 - startDate.getDay());
+
+            var endDate = new Date();
+            endDate.setDate(endDate.getDate() + 371 + 8 - startDate.getDay());
+
+            var dateList = [];
+            var currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                dateList.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            var tableBody = document.getElementById("dateGridBody");
+            var row;
+
+            for (var i = 0; i < dateList.length; i++) {
+                if (i % 7 === 0) {
+                    row = tableBody.insertRow();
+                }
+
+                var cell = row.insertCell();
+                cell.classList.add("date-cell");
+
+                // Check if the date is today and add a class for styling
+                if (isToday(dateList[i])) {
+                    cell.classList.add("today");
+                    // Scroll to today's date and center vertically
+                    // scrollToToday(cell);
+                }
+
+                // Check if it's the first day of the month
+                if (dateList[i].getDate() === 1) {
+                    cell.classList.add("month-cell");
+                }
+
+                var monthDiv = document.createElement("div");
+                monthDiv.classList.add("month");
+                monthDiv.innerText = dateList[i].toLocaleString('en-US', { month: 'short' });
+                cell.appendChild(monthDiv);
+
+                var dateDiv = document.createElement("div");
+                dateDiv.classList.add("date");
+                dateDiv.innerText = dateList[i].getDate();
+                cell.appendChild(dateDiv);
+
+                var yearDiv = document.createElement("div");
+                yearDiv.classList.add("year");
+                yearDiv.innerText = dateList[i].getFullYear();
+                cell.appendChild(yearDiv);
+            }
+
+            // Add event listener for mobile tap to show month and year
+            tableBody.addEventListener('click', handleMobileTap);
+            // added 2024-01-24 to try and tweak scrolling vvv
+
+var scrollToTodayFlag = false; // Flag to determine if scrolling is needed
+
+for (var i = 0; i < dateList.length; i++) {
+    if (i % 7 === 0) {
+        row = tableBody.insertRow();
+    }
+
+    var cell = row.insertCell();
+    cell.classList.add("date-cell");
+
+    if (isToday(dateList[i])) {
+        cell.classList.add("today");
+        scrollToTodayFlag = true; // Set the flag if it's today's date
+    }
+
+    // ... (rest of your cell creation logic)
+}
+
+// Scroll to today's date and center vertically if needed
+if (scrollToTodayFlag) {
+    var todayCell = document.querySelector('.today');
+    scrollToToday(todayCell);
+}
+
+// added 2024-01-24 to try and tweak scrolling ^^^
+
+
+        }
+
+        function isToday(date) {
+            var today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        // Function to scroll to today's date and center vertically
+//        function scrollToToday(cell) {
+//            var rect = cell.getBoundingClientRect();
+//            var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+//            var offset = (rect.top + rect.bottom - windowHeight) / 2;
+//            cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+//        }
+
+
+// tweaked scroll to center 2024-01-24 081824 
+function scrollToToday(cell) {
+    var rect = cell.getBoundingClientRect();
+    var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+    var cellHeight = rect.bottom - rect.top;
+
+    // Calculate the offset to bring the center of the cell to the center of the viewport
+    var offset = rect.top - (windowHeight - cellHeight) / 2;
+
+    cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+}
+
+
+        // Function to handle mobile tap to show month and year
+        function handleMobileTap(event) {
+            var target = event.target;
+            if (target.classList.contains('date-cell') && target.classList.contains('month-cell')) {
+                // Toggle visibility of month and year
+                target.querySelector('.month').classList.toggle('visible');
+                target.querySelector('.year').classList.toggle('visible');
+            }
+        }
+
+        // Call the function to generate the date grid
+        generateDateGrid();
+    </script>
+
+</body>
+</html>
