@@ -1,0 +1,105 @@
+<body>
+    <input type="file" id="imageInput" accept="image/*">
+    <div id="gridContainer"></div>
+    <script src="https://unpkg.com/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+    <script>
+    const imageInput = document.getElementById('imageInput');
+const gridContainer = document.getElementById('gridContainer');
+
+imageInput.addEventListener('change', handleImageUpload);
+
+function handleImageUpload(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function() {
+        const img = new Image();
+        img.src = reader.result;
+
+        img.onload = function() {
+            extractTextAndRenderGrid(img);
+        }
+    }
+
+    reader.readAsDataURL(file);
+}
+
+function extractTextAndRenderGrid(img) {
+    Tesseract.recognize(img, 'eng')
+        .then(({ data: { text } }) => {
+            const words = text.trim().split(/\s+/);
+
+            if (words.length === 16) {
+                renderGrid(words);
+                initDragAndDrop();
+            } else {
+                console.error('Invalid number of words detected:', words.length);
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+        });
+}
+
+function renderGrid(words) {
+    gridContainer.innerHTML = '';
+
+    for (let i = 0; i < 16; i++) {
+        const gridItem = document.createElement('div');
+        gridItem.classList.add('gridItem');
+        gridItem.textContent = words[i];
+        gridItem.draggable = true; // Make the element draggable
+        gridContainer.appendChild(gridItem);
+    }
+}
+
+function initDragAndDrop() {
+    const gridItems = document.querySelectorAll('.gridItem');
+    let draggedItem = null;
+
+    gridItems.forEach(item => {
+        item.addEventListener('dragstart', dragStart);
+        item.addEventListener('dragover', dragOver);
+        item.addEventListener('drop', drop);
+    });
+
+    gridContainer.addEventListener('dragover', dragOver); // Add event listener to the grid container
+
+    function dragStart(e) {
+        draggedItem = e.target;
+        e.dataTransfer.setData('text/plain', null);
+    }
+
+    function dragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move'; // Set the dropEffect to 'move'
+    }
+
+    function drop(e) {
+        e.preventDefault();
+        const targetItem = e.target.closest('.gridItem');
+        if (targetItem && targetItem !== draggedItem) {
+            const temp = targetItem.textContent;
+            targetItem.textContent = draggedItem.textContent;
+            draggedItem.textContent = temp;
+        }
+    }
+}</script>
+ <style>
+    #gridContainer {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 10px;
+    }
+    
+    .gridItem {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f0f0;
+        cursor: move;
+        user-select: none;
+      aspect-ratio:1;
+    }
+
+</style>
