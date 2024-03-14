@@ -3,14 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Text Grid</title>
+    <title>03131003p Connections Canvas</title>
     <style>
+        body {
+            font-family: sans-serif; /* Set font-family to sans-serif */
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+        }
+
         #gridContainer {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-gap: 10px;
+            max-width: calc(100vmin - 20px); /* Ensure the grid does not exceed 100vmin */
+            max-height: calc(100vmin - 20px); /* Ensure the grid does not exceed 100vmin */
+            padding: 10px; /* Add padding to keep grid items away from edges */
+            aspect-ratio: 1; /* Ensure the aspect ratio remains 1:1 */
         }
-        
+
         .gridItem {
             display: flex;
             justify-content: center;
@@ -18,13 +28,14 @@
             background-color: #f0f0f0;
             cursor: move;
             user-select: none;
-            aspect-ratio: 1;
             font-size: 16px; /* default font size for desktop */
+            overflow: hidden; /* Ensure text doesn't overflow outside the grid item */
+            word-wrap: break-word; /* Break words if they are too long to fit */
         }
 
         @media (max-width: 768px) { /* Adjust based on your desired breakpoint for mobile devices */
             .gridItem {
-                font-size: 20px; /* Increase font size for mobile */
+                font-size: 4vw; /* Set font size to 4% of viewport width for mobile */
             }
         }
 
@@ -56,7 +67,7 @@
 </head>
 <body>
     <input type="file" id="imageInput" accept="image/*">
-    <div id="gridContainer"></div>
+    <div id="gridContainer" style="display: none;"></div>
     <div id="loadingSpinner" style="display: none;">
         <div class="spinner-border" role="status">
             <span class="sr-only">Loading...</span>
@@ -98,7 +109,7 @@
 
                     if (words.length === 16) {
                         renderGrid(words);
-                        initDragAndDrop();
+                        imageInput.style.display = 'none'; // Hide image input
                     } else {
                         console.error('Invalid number of words detected:', words.length);
                     }
@@ -122,6 +133,9 @@
                 gridItem.draggable = true; // Make the element draggable
                 gridContainer.appendChild(gridItem);
             }
+
+            gridContainer.style.display = 'grid'; // Display the grid container once it's populated
+            initDragAndDrop(); // Initialize drag-and-drop functionality
         }
 
         function initDragAndDrop() {
@@ -150,9 +164,9 @@
                 e.preventDefault();
                 const targetItem = e.target.closest('.gridItem');
                 if (targetItem && targetItem !== draggedItem) {
-                    const temp = targetItem.textContent;
+                    const targetText = targetItem.textContent;
                     targetItem.textContent = draggedItem.textContent;
-                    draggedItem.textContent = temp;
+                    draggedItem.textContent = targetText;
                 }
             }
         }
