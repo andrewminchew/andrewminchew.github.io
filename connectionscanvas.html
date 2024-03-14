@@ -3,29 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connections Canvas</title>
+    <title>Image Text Grid</title>
     <style>
-        html {
-          display:flex;
-          justify-content:center;
-        }
-        body {
-            font-family: sans-serif; /* Set font-family to sans-serif */
-            margin: 0; /* Remove default margin */
-            padding: 0; /* Remove default padding */
-        }
-
         #gridContainer {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-gap: 10px;
-            max-width: calc(100vmin - 20px); /* Ensure the grid does not exceed 100vmin */
-            max-height:calc(100vmin - 20px); /* Ensure the grid does not exceed 100vmin */
-            overflow: auto; /* Enable scrolling if the grid exceeds the viewport */
-            padding: 10px; /* Add padding to keep grid items away from edges */
-            aspect-ratio: 1; /* Ensure the aspect ratio remains 1:1 */
         }
-
+        
         .gridItem {
             display: flex;
             justify-content: center;
@@ -33,6 +18,7 @@
             background-color: #f0f0f0;
             cursor: move;
             user-select: none;
+            aspect-ratio: 1;
             font-size: 16px; /* default font size for desktop */
         }
 
@@ -44,7 +30,6 @@
 
         #imageInput {
             font-size: 16px; /* default font size for desktop */
-          width:100%;
         }
 
         @media (max-width: 768px) { /* Adjust based on your desired breakpoint for mobile devices */
