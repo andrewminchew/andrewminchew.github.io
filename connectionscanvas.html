@@ -1,105 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Text Grid</title>
+    <style>
+      body {
+        max-width:768px;
+        margin:auto;
+        font-family:sans-serif;
+      }
+        #gridContainer {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 10px;
+        }
+        
+        .gridItem {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            cursor: move;
+            user-select: none;
+            aspect-ratio: 1;
+            font-size: 16px; /* default font size for desktop */
+        }
+
+        @media (max-width: 768px) { /* Adjust based on your desired breakpoint for mobile devices */
+            .gridItem {
+                font-size: 20px; /* Increase font size for mobile */
+            }
+        }
+
+        #imageInput {
+            font-size: 16px; /* default font size for desktop */
+        }
+
+        @media (max-width: 768px) { /* Adjust based on your desired breakpoint for mobile devices */
+            #imageInput {
+                font-size: 20px; /* Increase font size for mobile */
+            }
+        }
+
+        /* Spinner styles */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        /* Center the spinner */
+        #loadingSpinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000; /* Ensure it's on top of other content */
+        }
+    </style>
+</head>
 <body>
     <input type="file" id="imageInput" accept="image/*">
     <div id="gridContainer"></div>
+    <div id="loadingSpinner" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
     <script src="https://unpkg.com/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
     <script>
-    const imageInput = document.getElementById('imageInput');
-const gridContainer = document.getElementById('gridContainer');
+        const imageInput = document.getElementById('imageInput');
+        const gridContainer = document.getElementById('gridContainer');
+        const loadingSpinner = document.getElementById('loadingSpinner');
 
-imageInput.addEventListener('change', handleImageUpload);
+        imageInput.addEventListener('change', handleImageUpload);
 
-function handleImageUpload(e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
 
-    reader.onload = function() {
-        const img = new Image();
-        img.src = reader.result;
+            reader.onloadstart = function() {
+                // Show loading spinner when file upload starts
+                loadingSpinner.style.display = 'block';
+            };
 
-        img.onload = function() {
-            extractTextAndRenderGrid(img);
+            reader.onload = function() {
+                const img = new Image();
+                img.src = reader.result;
+
+                img.onload = function() {
+                    extractTextAndRenderGrid(img);
+                };
+            };
+
+            reader.readAsDataURL(file);
         }
-    }
 
-    reader.readAsDataURL(file);
-}
+        function extractTextAndRenderGrid(img) {
+            Tesseract.recognize(img, 'eng')
+                .then(({ data: { text } }) => {
+                    const words = text.trim().split(/\s+/);
 
-function extractTextAndRenderGrid(img) {
-    Tesseract.recognize(img, 'eng')
-        .then(({ data: { text } }) => {
-            const words = text.trim().split(/\s+/);
+                    if (words.length === 16) {
+                        renderGrid(words);
+                        initDragAndDrop();
+                    } else {
+                        console.error('Invalid number of words detected:', words.length);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                })
+                .finally(() => {
+                    // Hide loading spinner when processing is complete
+                    loadingSpinner.style.display = 'none';
+                });
+        }
 
-            if (words.length === 16) {
-                renderGrid(words);
-                initDragAndDrop();
-            } else {
-                console.error('Invalid number of words detected:', words.length);
+        function renderGrid(words) {
+            gridContainer.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const gridItem = document.createElement('div');
+                gridItem.classList.add('gridItem');
+                gridItem.textContent = words[i];
+                gridItem.draggable = true; // Make the element draggable
+                gridContainer.appendChild(gridItem);
             }
-        })
-        .catch(err => {
-            console.error('Error:', err);
-        });
-}
-
-function renderGrid(words) {
-    gridContainer.innerHTML = '';
-
-    for (let i = 0; i < 16; i++) {
-        const gridItem = document.createElement('div');
-        gridItem.classList.add('gridItem');
-        gridItem.textContent = words[i];
-        gridItem.draggable = true; // Make the element draggable
-        gridContainer.appendChild(gridItem);
-    }
-}
-
-function initDragAndDrop() {
-    const gridItems = document.querySelectorAll('.gridItem');
-    let draggedItem = null;
-
-    gridItems.forEach(item => {
-        item.addEventListener('dragstart', dragStart);
-        item.addEventListener('dragover', dragOver);
-        item.addEventListener('drop', drop);
-    });
-
-    gridContainer.addEventListener('dragover', dragOver); // Add event listener to the grid container
-
-    function dragStart(e) {
-        draggedItem = e.target;
-        e.dataTransfer.setData('text/plain', null);
-    }
-
-    function dragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move'; // Set the dropEffect to 'move'
-    }
-
-    function drop(e) {
-        e.preventDefault();
-        const targetItem = e.target.closest('.gridItem');
-        if (targetItem && targetItem !== draggedItem) {
-            const temp = targetItem.textContent;
-            targetItem.textContent = draggedItem.textContent;
-            draggedItem.textContent = temp;
         }
-    }
-}</script>
- <style>
-    #gridContainer {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        grid-gap: 10px;
-    }
-    
-    .gridItem {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #f0f0f0;
-        cursor: move;
-        user-select: none;
-      aspect-ratio:1;
-    }
 
-</style>
+        function initDragAndDrop() {
+            const gridItems = document.querySelectorAll('.gridItem');
+            let draggedItem = null;
+
+            gridItems.forEach(item => {
+                item.addEventListener('dragstart', dragStart);
+                item.addEventListener('dragover', dragOver);
+                item.addEventListener('drop', drop);
+            });
+
+            gridContainer.addEventListener('dragover', dragOver); // Add event listener to the grid container
+
+            function dragStart(e) {
+                draggedItem = e.target;
+                e.dataTransfer.setData('text/plain', null);
+            }
+
+            function dragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move'; // Set the dropEffect to 'move'
+            }
+
+            function drop(e) {
+                e.preventDefault();
+                const targetItem = e.target.closest('.gridItem');
+                if (targetItem && targetItem !== draggedItem) {
+                    const temp = targetItem.textContent;
+                    targetItem.textContent = draggedItem.textContent;
+                    draggedItem.textContent = temp;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
