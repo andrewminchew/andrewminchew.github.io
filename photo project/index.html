@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Awesome Blog</title>
+    <style>
+        /* ... (Your CSS from before remains the same) ... */
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .blog-posts-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .blog-post {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .blog-post img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 10px;
+            border-radius: 3px;
+        }
+        .post-date {
+            font-size: 0.9em;
+            color: #777;
+            margin-bottom: 5px;
+        }
+        .post-caption {
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+        h1 { text-align: center; color: #333; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to My Blog!</h1>
+    <div class="blog-posts-container" id="blogPostsContainer">
+        <p>Loading blog posts...</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const blogPostsContainer = document.getElementById('blogPostsContainer');
+            const blogListFile = 'blog_posts.txt'; // The file your shortcut updates
+
+            // Function to parse date from HTML content (same as before)
+            function parseDateFromHtml(htmlString) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlString, 'text/html');
+                const dateElement = doc.querySelector('.post-date');
+                if (dateElement) {
+                    return new Date(dateElement.textContent);
+                }
+                return null;
+            }
+
+            async function loadBlogPosts() {
+                blogPostsContainer.innerHTML = '<p>Loading blog posts...</p>'; // Show loading message
+
+                let blogPostFiles = [];
+                try {
+                    const response = await fetch(blogListFile);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} for ${blogListFile}`);
+                    }
+                    const text = await response.text();
+                    // Split by new line, filter out empty lines
+                    blogPostFiles = text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+                    // Reverse the array if your shortcut appends, so the newest is first for display
+                    // Or keep as is and rely on date sorting below.
+                    // blogPostFiles.reverse(); // Uncomment if you want to display in append order
+                } catch (error) {
+                    console.error(`Could not load blog post list (${blogListFile}):`, error);
+                    blogPostsContainer.innerHTML = `<p style="color: red;">Error loading blog post list. Please ensure '${blogListFile}' exists and is accessible.</p>`;
+                    return; // Stop execution if list can't be loaded
+                }
+
+                const fetchedPosts = [];
+
+                // Fetch each blog post's content
+                for (const filename of blogPostFiles) {
+                    try {
+                        const response = await fetch(filename);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status} for ${filename}`);
+                        }
+                        const htmlContent = await response.text();
+                        const postDate = parseDateFromHtml(htmlContent); // Extract date for sorting
+                        fetchedPosts.push({ html: htmlContent, date: postDate, filename: filename });
+                    } catch (error) {
+                        console.error(`Could not load blog post ${filename}:`, error);
+                        // Optionally add an error message for individual failed posts
+                        // blogPostsContainer.innerHTML += `<p style="color: orange;">Warning: Could not load ${filename}</p>`;
+                    }
+                }
+
+                blogPostsContainer.innerHTML = ''; // Clear loading message
+
+                // Sort posts by date, most recent first (descending)
+                fetchedPosts.sort((a, b) => {
+                    if (a.date && b.date) {
+                        return b.date.getTime() - a.date.getTime();
+                    }
+                    // Fallback: If dates are missing, perhaps sort by filename if they contain date/time
+                    return 0; // Or use a different fallback sort
+                });
+
+
+                if (fetchedPosts.length === 0 && blogPostFiles.length > 0) {
+                     blogPostsContainer.innerHTML = '<p>No blog posts could be loaded from the list. Check console for errors.</p>';
+                } else if (blogPostFiles.length === 0) {
+                     blogPostsContainer.innerHTML = '<p>No blog posts found in the list file. Create a post with your shortcut!</p>';
+                } else {
+                     // Append sorted posts to the container
+                    fetchedPosts.forEach(post => {
+                        blogPostsContainer.innerHTML += post.html;
+                    });
+                }
+            }
+
+            loadBlogPosts();
+        });
+    </script>
+</body>
+</html>
