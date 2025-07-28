@@ -1,0 +1,184 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #e6e6e6;
+    overflow: hidden;
+    color: #333;
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 2.5em;
+    text-align: center;
+}
+
+p {
+    color: #34495e;
+    margin-bottom: 40px;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+/* Preloader styles */
+#preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f8f8f8;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease-out;
+}
+
+.spinner {
+    border: 8px solid rgba(0, 0, 0, 0.1);
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hide content until loaded */
+#content.hidden {
+    display: none;
+}
+
+/* Define the base dimensions in pixels for calculations */
+/* These are derived from your actual dimensions, scaled. */
+/* Using a max-height of 400px for the 12.25" side as a reference */
+:root {
+    --box-height: 400px; /* Corresponds to 12.25 inches (tall) */
+    --box-width: calc(400px * (9.5 / 12.25)); /* Corresponds to 9.5 inches (wide) */
+    --box-depth: calc(400px * (7.75 / 12.25)); /* Corresponds to 7.75 inches (long) */
+}
+
+
+/* The 3D scene - Will size to contain the box based on its largest dimension */
+.scene {
+    /* Set a maximum size for the scene to prevent it from getting too large */
+    max-width: var(--box-width); /* Max width to contain the front/back faces */
+    max-height: var(--box-height); /* Max height to contain the front/back faces */
+    width: 80vmin; /* Responsive width, will adapt to viewport */
+    height: 80vmin; /* Responsive height */
+    perspective: 1200px; /* Slightly increased perspective for a non-cube */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/* The box itself will have its own dimensions based on the CSS variables */
+.box {
+    width: var(--box-width); /* Base width for front/back faces */
+    height: var(--box-height); /* Base height for front/back faces */
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-15deg) rotateY(-30deg); /* Initial rotation */
+    transition: transform 0.1s ease-out;
+    cursor: grab;
+}
+
+/* Individual faces of the box */
+.box__face {
+    position: absolute;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.15);
+    transition: background-image 0.3s ease-in-out;
+    /* Center the face within its parent before translation */
+    top: 50%;
+    left: 50%;
+    transform-origin: center center; /* Ensure transformations are from the center */
+}
+
+/* Front and Back faces: Dimensions are width x height */
+.box__face--front,
+.box__face--back {
+    width: var(--box-width);
+    height: var(--box-height);
+}
+.box__face--front  { background-image: url('images/face-front.jpg');  transform: translateX(-50%) translateY(-50%) rotateY(  0deg) translateZ(calc(var(--box-depth) / 2)); }
+.box__face--back   { background-image: url('images/face-back.jpg');   transform: translateX(-50%) translateY(-50%) rotateY(180deg) translateZ(calc(var(--box-depth) / 2)); }
+
+
+/* Right and Left faces: Dimensions are depth x height */
+.box__face--right,
+.box__face--left {
+    width: var(--box-depth);
+    height: var(--box-height);
+}
+.box__face--right  { background-image: url('images/face-right.jpg');  transform: translateX(-50%) translateY(-50%) rotateY( 90deg) translateZ(calc(var(--box-width) / 2)); }
+.box__face--left   { background-image: url('images/face-left.jpg');   transform: translateX(-50%) translateY(-50%) rotateY(-90deg) translateZ(calc(var(--box-width) / 2)); }
+
+
+/* Top and Bottom faces: Dimensions are width x depth */
+.box__face--top,
+.box__face--bottom {
+    width: var(--box-width);
+    height: var(--box-depth);
+}
+.box__face--top    { background-image: url('images/face-top.jpg');    transform: translateX(-50%) translateY(-50%) rotateX( 90deg) translateZ(calc(var(--box-height) / 2)); }
+.box__face--bottom { background-image: url('images/face-bottom.jpg'); transform: translateX(-50%) translateY(-50%) rotateX(-90deg) translateZ(calc(var(--box-height) / 2)); }
+
+
+/* When dragging */
+.box.grabbing {
+    cursor: grabbing;
+    transition: none;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) { /* Adjust breakpoint as needed */
+    :root {
+        --box-height: 300px; /* Smaller base height for mobile */
+        --box-width: calc(300px * (9.5 / 12.25));
+        --box-depth: calc(300px * (7.75 / 12.25));
+    }
+    h1 {
+        font-size: 2em;
+    }
+    p {
+        font-size: 1em;
+    }
+    .scene {
+        width: 90vmin;
+        height: 90vmin;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --box-height: 250px; /* Even smaller base for very small screens */
+        --box-width: calc(250px * (9.5 / 12.25));
+        --box-depth: calc(250px * (7.75 / 12.25));
+    }
+    h1 {
+        font-size: 1.5em;
+    }
+    p {
+        font-size: 0.9em;
+    }
+}

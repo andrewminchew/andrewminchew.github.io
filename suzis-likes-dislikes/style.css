@@ -1,0 +1,160 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #e6e6e6;
+    overflow: hidden;
+    color: #333;
+}
+
+/* Preloader styles (unchanged) */
+#preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f8f8f8;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease-out;
+}
+
+.spinner {
+    border: 8px solid rgba(0, 0, 0, 0.1);
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hide content until loaded (unchanged) */
+#content.hidden {
+    display: none;
+}
+
+/* Define the base dimensions in pixels for calculations */
+/* Increased initial dimensions to effectively "zoom in" */
+:root {
+    --box-height: 800px; /* Corresponds to 12.25 inches (tall) - Doubled from 400px */
+    --box-width: calc(var(--box-height) * (9.5 / 12.25)); /* Corresponds to 9.5 inches (wide) */
+    --box-depth: calc(var(--box-height) * (7.75 / 12.25)); /* Corresponds to 7.75 inches (long) */
+}
+
+
+/* The 3D scene - Now takes up more vmin space and caps at the larger box dimensions */
+.scene {
+    /* Set a maximum size for the scene to prevent it from getting too large */
+    max-width: var(--box-width);
+    max-height: var(--box-height);
+    width: 90vmin; /* Increased from 80vmin to fill more of the viewport */
+    height: 90vmin; /* Increased from 80vmin */
+    perspective: 1200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Removed margin-top as there are no H1/P elements */
+}
+
+/* The box itself will have its own dimensions based on the CSS variables */
+.box {
+    width: var(--box-width); /* Base width for front/back faces */
+    height: var(--box-height); /* Base height for front/back faces */
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-15deg) rotateY(-30deg); /* Initial rotation */
+    transition: transform 0.1s ease-out;
+    cursor: grab;
+}
+
+/* Individual faces of the box - dimensions and translations are derived from variables */
+.box__face {
+    position: absolute;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.15);
+    transition: background-image 0.3s ease-in-out;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+}
+
+/* Front and Back faces: Dimensions are width x height */
+.box__face--front,
+.box__face--back {
+    width: var(--box-width);
+    height: var(--box-height);
+}
+.box__face--front  { background-image: url('images/face-front.jpg');  transform: translateX(-50%) translateY(-50%) rotateY(  0deg) translateZ(calc(var(--box-depth) / 2)); }
+.box__face--back   { background-image: url('images/face-back.jpg');   transform: translateX(-50%) translateY(-50%) rotateY(180deg) translateZ(calc(var(--box-depth) / 2)); }
+
+
+/* Right and Left faces: Dimensions are depth x height */
+.box__face--right,
+.box__face--left {
+    width: var(--box-depth);
+    height: var(--box-height);
+}
+.box__face--right  { background-image: url('images/face-right.jpg');  transform: translateX(-50%) translateY(-50%) rotateY( 90deg) translateZ(calc(var(--box-width) / 2)); }
+.box__face--left   { background-image: url('images/face-left.jpg');   transform: translateX(-50%) translateY(-50%) rotateY(-90deg) translateZ(calc(var(--box-width) / 2)); }
+
+
+/* Top and Bottom faces: Dimensions are width x depth */
+.box__face--top,
+.box__face--bottom {
+    width: var(--box-width);
+    height: var(--box-depth);
+}
+.box__face--top    { background-image: url('images/face-top.jpg');    transform: translateX(-50%) translateY(-50%) rotateX( 90deg) translateZ(calc(var(--box-height) / 2)); }
+.box__face--bottom { background-image: url('images/face-bottom.jpg'); transform: translateX(-50%) translateY(-50%) rotateX(-90deg) translateZ(calc(var(--box-height) / 2)); }
+
+
+/* When dragging (unchanged) */
+.box.grabbing {
+    cursor: grabbing;
+    transition: none;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    :root {
+        --box-height: 600px; /* Doubled from 300px */
+        --box-width: calc(var(--box-height) * (9.5 / 12.25));
+        --box-depth: calc(var(--box-height) * (7.75 / 12.25));
+    }
+    .scene {
+        width: 90vmin; /* Maintain larger vmin usage */
+        height: 90vmin;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --box-height: 500px; /* Doubled from 250px */
+        --box-width: calc(var(--box-height) * (9.5 / 12.25));
+        --box-depth: calc(var(--box-height) * (7.75 / 12.25));
+    }
+    .scene {
+        width: 95vmin; /* Maybe even larger for very small screens */
+        height: 95vmin;
+    }
+}
