@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Google Sheet Dashboard</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+    </style>
+    <meta name="robots" content="noindex">
+
+</head>
+<body>
+    <h1>Testing Google Sheets as a backend for a project</h1>
+    <div id="data-container">Loading data...</div>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        // Replace with your actual API key, Spreadsheet ID, and Range
+        const API_KEY = 'AIzaSyAvKhOweAp2q9h4pyl5PeI9BAunvyM8Ju4';
+        const SPREADSHEET_ID = '1loTKxI3Bvifix3xdkiDQTqPfNKk_ChyglmEnm-kTVRg';
+        const RANGE = 'Sheet1!A1:B2'; // Or whatever range you need
+
+        function initClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+            }).then(function () {
+                return gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SPREADSHEET_ID,
+                    range: RANGE,
+                });
+            }).then(function (response) {
+                const values = response.result.values;
+                const dataContainer = document.getElementById('data-container');
+
+                if (values && values.length > 0) {
+                    let tableHTML = '<table>';
+                    values.forEach((row, rowIndex) => {
+                        tableHTML += '<tr>';
+                        row.forEach((cell, cellIndex) => {
+                            if (rowIndex === 0) { // Assuming first row is headers
+                                tableHTML += `<th>${cell}</th>`;
+                            } else {
+                                tableHTML += `<td>${cell}</td>`;
+                            }
+                        });
+                        tableHTML += '</tr>';
+                    });
+                    tableHTML += '</table>';
+                    dataContainer.innerHTML = tableHTML;
+                } else {
+                    dataContainer.innerHTML = 'No data found.';
+                }
+            }, function (reason) {
+                console.error('Error: ' + reason.result.error.message);
+                document.getElementById('data-container').innerHTML = `Error loading data: ${reason.result.error.message}`;
+            });
+        }
+
+        // Load the Google API client library
+        gapi.load('client', initClient);
+    </script>
+</body>
+
+</html>
+
