@@ -1,23 +1,30 @@
 <!DOCTYPE html>
-
 <head>
-    <title>Andrew Minchew / Blog / Just an update</title>
-    <meta name="robots" content="noindex">
-    <link rel="stylesheet" href="../new-styles.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-4G2XVZVG0Y');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
+  <link rel="stylesheet" href="/styles.css">
 
+  <!-- ^^ every page stuff ^^ -->
+  <!--                        -->
+  <!-- vv   unique stuff   vv -->
+    <title>Andrew Minchew / Blog / Just an update</title>
+  <meta name="description" contents="PageDescription">
 </head>
+
 
 <body>
     <header>
-        <nav id="main-nav">
-            <ul>
-                <li><a href="/">Old home</a></li>
-                <li><a href="/new-home.html">Draft home</a></li>
-                <li><a href="/blog">Blog</a></li>
-                <li><a href="/about">About</a></li>
-            </ul>
-        </nav>
+        <div id="nav-placeholder"
+             hx-get="/index.html"      hx-select="#main-nav"    hx-trigger="load"        hx-swap="outerHTML">     Loading main navigation... if JS is disabled, you've have to navigate through the <a href="/index.html">homepage</a>.
+        </div>
     </header>
     <main>
         <article>
