@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-4G2XVZVG0Y');
+  </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connections Canvas</title>
@@ -36,7 +44,7 @@
             word-wrap: break-word; /* Break words if they are too long to fit */
             aspect-ratio:1;
 
-                        user-select: none; /* Disable text selection */
+            user-select: none; /* Disable text selection */
             -webkit-user-select: none; /* For Safari */
             -moz-user-select: none; /* For Firefox */
             -ms-user-select: none; /* For Internet Explorer/Edge */
@@ -51,6 +59,8 @@
 
         #imageInput {
             font-size: 16px; /* default font size for desktop */
+            display: block;
+            margin:25px auto;
         }
 
         @media (max-width: 768px) { /* Adjust based on your desired breakpoint for mobile devices */
@@ -73,6 +83,27 @@
             transform: translate(-50%, -50%);
             z-index: 1000; /* Ensure it's on top of other content */
         }
+        #instructions {
+            display:flex;
+            flex-direction:column;
+            gap:15px;
+            overflow-y: scroll;
+        }
+        #instructions ol {
+            padding:unset;
+            margin:auto;
+        }
+        #instructions ol li {
+            margin-bottom:10px;
+        }
+        #instructions * {
+            width: 90vw;
+            margin:auto;
+        }
+        * {
+            outline:1px solid red;
+        }
+
     </style>
 </head>
 <body>
@@ -82,7 +113,20 @@
         <div class="spinner-border" role="status">
             <span class="sr-only">Loading...</span>
         </div>
+        
     </div>
+    <div id="instructions">
+        <h1>Connections Canvas</h1>
+        <p>I made this tool because I thought you should be able to drag the tiles around the NYT Connections game and this seemed easier than getting hired by the NYT Games department.</p>
+        <p>If you'd rather watch a video, you're in luck!</p>
+            <ol>
+                <li>Set Connections game to light mode</li>
+                <li>Screenshot the connections board</li>
+                <li>Crop the screenshot to only include the word tiles</li>
+                <li>Upload the screenshot with the image selector above</li>
+                <li>Drag the tiles around the canvas to plan your guesses. The drag behavior can be a little fiddly. If you have a suggestion for how to fix it (or any other feedback), please <a href="contact" target="_blank">drop me a line</a>.</li>
+            </ol>
+        </div>
     <script src="https://unpkg.com/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
     <script>
         const imageInput = document.getElementById('imageInput');
