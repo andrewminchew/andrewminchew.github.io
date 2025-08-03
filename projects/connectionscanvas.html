@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>03131009p Connections Canvas</title>
+    <title>Connections Canvas</title>
     <style>
         body {
             font-family: sans-serif; /* Set font-family to sans-serif */
             margin: 0; /* Remove default margin */
             padding: 0; /* Remove default padding */
+            overflow: hidden; /* Prevent body scrolling */
+            height: 100vh; /* Ensure body takes full viewport height */
         }
 
         #gridContainer {
@@ -19,6 +21,11 @@
             max-height: calc(100vmin - 20px); /* Ensure the grid does not exceed 100vmin */
             padding: 10px; /* Add padding to keep grid items away from edges */
             aspect-ratio: 1; /* Ensure the aspect ratio remains 1:1 */
+            /* Center the grid container */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .gridItem {
@@ -27,7 +34,10 @@
             align-items: center;
             background-color: #f0f0f0;
             cursor: move;
-            user-select: none;
+            user-select: none; /* Disable text selection */
+            -webkit-user-select: none; /* For Safari */
+            -moz-user-select: none; /* For Firefox */
+            -ms-user-select: none; /* For Internet Explorer/Edge */
             font-size: 16px; /* default font size for desktop */
             overflow: hidden; /* Ensure text doesn't overflow outside the grid item */
             word-wrap: break-word; /* Break words if they are too long to fit */
@@ -42,6 +52,10 @@
 
         #imageInput {
             font-size: 16px; /* default font size for desktop */
+            position: absolute; /* Position the input */
+            top: 10px; /* Adjust as needed */
+            left: 10px; /* Adjust as needed */
+            z-index: 100; /* Ensure it's above other content if necessary */
         }
 
         @media (max-width: 768px) { /* Adjust based on your desired breakpoint for mobile devices */
@@ -54,6 +68,15 @@
         .spinner-border {
             width: 3rem;
             height: 3rem;
+            display: inline-block;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
         }
 
         /* Center the spinner */
