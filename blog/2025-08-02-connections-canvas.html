@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-4G2XVZVG0Y');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+
+  <!-- ^^ every page stuff ^^ -->
+  <!--                        -->
+  <!-- vv   unique stuff   vv -->
+  <meta name="robots" content="noindex">
+  <title>Andrew Minchew / Blog / Connections Canvas</title>
+  <meta name="description" contents="I wanted this feature on the NYT Connections puzzle, so I made it for myself.">
+</head>
+
+<body>
+    <header>
+        <div id="nav-placeholder"
+             hx-get="/index.html"      hx-select="#main-nav"    hx-trigger="load"        hx-swap="outerHTML">     Loading main navigation... if JS is disabled, you've have to navigate through the <a href="/index.html">homepage</a>.
+        </div>
+    </header>
+    <main>
+        <article>
+        <h1>Connections Canvas</h1>
+        <p><a href="/projects/connections-canvas.html">Connections Canvas</a></p>
+        <p>I felt like you should be able to drag the tiles around the NYT Connections game and this seemed easier than getting the NYT to change their game on my account. So I explained the idea to ChatGPT (or maybe Gemini) and here we are.</p>
+        <p>Here's how to use it:</p>
+            <ol>
+                <li>Set Connections game to light mode</li>
+                <li>Screenshot the connections board</li>
+                <li>Crop the screenshot to only include the word tiles</li>
+                <li>Upload the screenshot with the image selector above</li>
+                <li>Drag the tiles around the canvas to plan your guesses. The drag behavior can be a little fiddly. If you have a suggestion for how to fix it (or any other feedback), please <a href="/contact.html">drop me a line</a>.</li>
+            </ol>
+                    <p>If you're a visual learner, check back soon. I'll be adding a video link soon.</p>
+<p>Now <a href="/projects/connections-canvas.html">go forth and puzzle</a>!</p>
+        </article>
+    </main>
+    <footer>
+        Copyright Andrew Minchew 2025
+    </footer>
+
+</body>

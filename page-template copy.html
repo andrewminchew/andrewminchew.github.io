@@ -18,7 +18,7 @@
   <!--                        -->
   <!-- vv   unique stuff   vv -->
   <meta name="robots" content="noindex">
-  <title>Page title</title>
+  <title>Using ChatGPT to make my own micro-journaling tool</title>
   <meta name="description" contents="PageDescription">
 </head>
 
@@ -30,8 +30,24 @@
   </header>
   <main>
     <article>
-      <h1>this is the h1</h1>
-      <p>write some trill content</p>
+      <h1>Using ChatGPT to make my own micro-journaling tool</h1>
+<hr>
+<p>For a while now I've wanted a simple, journal-like tool for logging my day. Something to document all the little questions I ask myself and forget to research later, to hold the partially formed ideas that come exactly when I don't have time to act on them, to record all the 2 minute tasks that inevitably balloon into something more complicated. Something like twitter, but not public; like Day One, but not so formal; like Stickies.app but less cluttered; like a plain text file, but with timestamps and auto-save.</p>
+<p>So like many nerds these days, I turned to chatGPT, fed it some prompts, massaged the output slightly, and now after about an hour of work, I have created for myself a micro journal that receives entries, stores them to the user's device, and displays them in a scrollable history.</p>
+<p>And because I'm endlessly paranoid, before I published this post, I went back and had chatGPT write up a disclaimer.</p>
+<p>The entries are stored on your device, so you can close the page and come back to it later; but no one else is ever going to see it (unless they visit the page using your phone of course).</p>
+<p>What do you think of my project? What are you doing with ChatGPT?</p>
+<p><a tabindex="0" href="https://andrewminchew.com/projects/journal" target="_self" data-test-app-aware-link="">https://andrewminchew.com/projects/journal/</a></p>
+<p>If you want to fork the code, you can get it on<a tabindex="0" href="https://codepen.io/andrewminchew/pen/xxamyZb" target="_self" data-test-app-aware-link="">CodePen here</a>.</p>
+<hr />
+<p>For those that are a little more curious, here are the prompts that got me 98% of the way there.</p>
+<blockquote>using html, css and javascript, create a page with a text field and a submit button. when the user clicks submit, the text in the field should be stored in local storage. after the input is added to local storage, the contents of the local storage should be rendered in the page as HTML</blockquote>
+<blockquote>update the code so that each item is timestamped with the date and time it was created, down to the second. update the html so that the timestamp is displayed alongside the entry</blockquote>
+<p>At this point, I adjusted the code to make some layout changes, then I fed the code back to ChatGPT and ask it to change a few more things.</p>
+<blockquote>update the javascript so that renderItems will cause the div with id "output-container" to scroll so that the most recent entry is visible</blockquote>
+<blockquote>update the form so that the enter key will cause the form to submit</blockquote>
+<blockquote>i'm sharing a project that i made, but i don't want people to have too high of expectations for the performance, quality or security of the product. how can i succinctly express this sentiment?</blockquote>
+<blockquote>javascript so that a button with id "dismiss-disclaimer" will cause the element with id "disclaimer" to be set to display:none;</blockquote>
     </article>
   </main>
   <footer>

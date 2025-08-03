@@ -83,15 +83,6 @@
             transform: translate(-50%, -50%);
             z-index: 1000; /* Ensure it's on top of other content */
         }
-        #instructions {
-            display:flex;
-            flex-direction:column;
-            overflow-y: scroll;
-            padding:25px;
-        }
-        #instructions ol li {
-            margin-bottom:10px;
-        }
     </style>
 </head>
 <body>
@@ -101,20 +92,8 @@
         <div class="spinner-border" role="status">
             <span class="sr-only">Loading...</span>
         </div>
-        
     </div>
-    <div id="instructions">
-        <h1>Connections Canvas</h1>
-        <p>I made this tool because I thought you should be able to drag the tiles around the NYT Connections game and this seemed easier than getting hired by the NYT Games department.</p>
-        <p>If you'd rather watch a video, <a href="#">here you go</a>!</p>
-            <ol>
-                <li>Set Connections game to light mode</li>
-                <li>Screenshot the connections board</li>
-                <li>Crop the screenshot to only include the word tiles</li>
-                <li>Upload the screenshot with the image selector above</li>
-                <li>Drag the tiles around the canvas to plan your guesses. The drag behavior can be a little fiddly. If you have a suggestion for how to fix it (or any other feedback), please <a href="contact" target="_blank">drop me a line</a>.</li>
-            </ol>
-        </div>
+    <p style="padding:25px;">This is a tool I made (with a lot of help from AI) so that I could drag and drop the tiles on the NYT Connections puzzle. <a href="/blog/2025-08-02-connections-canvas.html">Learn more here</a>.</p>
     <script src="https://unpkg.com/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
     <script>
         const imageInput = document.getElementById('imageInput');
