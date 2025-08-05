@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-4G2XVZVG0Y');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+
+  <!-- ^^ every page stuff ^^ -->
+  <!--                        -->
+  <!-- vv   unique stuff   vv -->
+  <meta name="robots" content="noindex">
+  <title>Andrew Minchew / Blog / My Kinetic Wind Sculpture AKA Windmill</title>
+  <meta name="description" contents="description">
+</head>
+
+<body>
+  <header>
+    <div id="nav-placeholder" hx-get="/index.html" hx-select="#main-nav" hx-trigger="load" hx-swap="outerHTML"> Loading
+      main navigation... if JS is disabled, you've have to navigate through the <a href="/index.html">homepage</a>.
+    </div>
+  </header>
+  <main>
+    <article>
+      <h1>Building a windmill to keep in my yard</h1>
+
+      <p>It&rsquo;s hard to pin down exactly what motivated me to make this windmill. Some confluence of a number of
+        factors I&rsquo;m aware of:</p>
+
+      <ul>
+        <li>I love the Eames film <a href="https://www.youtube.com/watch?v=kv6YvKPXQzk">Solar Do-Nothing Machine</a>
+        </li>
+        <li>My grandpa made a windmill out of popsicle sticks when I was a kid and I thought it was really cool. </li>
+        <li>I made my own popsicle stick windmill a few years back, but it&rsquo;s since been lost to decay and a move.
+          <br />
+          <style>
+            .embed-container {
+              position: relative;
+              padding-bottom: 56.25%;
+              height: 0;
+              overflow: hidden;
+              max-width: 100%;
+            }
+
+            .embed-container iframe,
+            .embed-container object,
+            .embed-container embed {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+            }
+          </style>
+          <div class='embed-container'><iframe src='https://www.youtube.com/embed/9e-8P1br854' frameborder='0'
+              allowfullscreen></iframe></div>
+        </li>
+        <li>I love things that make the weather tangible or translate it into another sense: rain gauges, kinetic sculptures, wind chimes, the traditional
+          Japanese shishi-odoshi (bamboo deer scarer), those little solar powered bobble heads that you put in your
+          window sill or car dashboard... </li>
+        <li>We got a 3d printer recently and I&rsquo;ve been itching for a new project to model. </li>
+      </ul>
+
+      <p>So I started sketching and got my ideas together. </p>
+
+      <p>
+        <sketch gallery>
+      </p>
+
+      <p>Once I had my head wrapped around it, I got into OnShape, started printing parts and assembling. I had recently
+        finished another project where I started using bamboo skewers as a supplementary construction material, and I
+        wanted to make something a little bigger using the same concept.</p>
+
+      <p>
+        <bracket, assembly>
+          Turntable bearing assembly
+          https://www.dropbox.com/scl/fi/pmjtzkaog3gjruekklytg/Motion-Still-2025-07-27.GIF?rlkey=703nocm7yn4tvqw0345mnyitr&st=9wzu1wg7&raw=1
+      </p>
+
+      <p>I&rsquo;ve had some 5mm steel balls in the garage that I salvaged from some discarder equipment somewhere along
+        the way, printing m own bearing races and cages seemed like a good way to make use of these.</p>
+
+      <p>
+        <screencap, turntable bearing gif>
+      </p>
+
+      <p>Turns out that bearings are actually hard to get right and add a bunch of unnecessary weight, so once I finally
+        got it all together, the only motion in the whole structure way in the flex of the bamboo skewers 😂 Add to that
+        the fact that I had picked literally the absolute worst time to be testing a windmill in Houston…</p>
+
+      <p>
+        <wiggling in the wind
+          https://www.dropbox.com/scl/fi/bh60ck8th8xledyrbqtse/EBF5D7BD-347C-492D-BCD0-CB7DB2939AB7.GIF?rlkey=371ga74not4jj5vrtyc5w6cik&amp;st=fnw8rmne&amp;raw=1 ,
+          wind speeds>
+      </p>
+
+      <p>So I went back to the drawing board with the intent to eliminate the bearings, simplify things, and just rely
+        and loose connections to allow for the rotational motion. Between the reduced friction, increased rotor blades
+        surface area, and some actual wind to work with, I finally had something that would move!</p>
+
+      <p>
+        <windy video>
+      </p>
+
+      <p>Final step is to run the whole print and assembly process again, document it better, send them out to family
+        and friends, and post the final assets to Printables! I&rsquo;ll update this post with a link to the files when
+        I get them uploaded.</p>
+
+      <img src="/images/2025-07-30-windmill.jpeg" alt="a DIY kinetic wind sculpture that looks like a windmill"
+        hx-get="/gallery/index.html" hx-select=".project.windmill" hx-trigger="load" hx-swap="outerHTML">
+      </img>
+    </article>
+  </main>
+  <footer>
+    Copyright Andrew Minchew 2025
+  </footer>
+
+</body>

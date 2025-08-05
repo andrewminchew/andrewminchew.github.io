@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-4G2XVZVG0Y');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+
+    <!-- ^^ every page stuff ^^ -->
+    <!--                        -->
+    <!-- vv   unique stuff   vv -->
+    <meta name="robots" content="noindex">
+    <title>Andrew Minchew / Photo Gallery</title>
+    <meta name="description" contents="PageDescription">
+</head>
+
+<body>
+    <header>
+        <div id="nav-placeholder" hx-get="/index.html" hx-select="#main-nav" hx-trigger="load" hx-swap="outerHTML">
+            Loading
+            main navigation... if JS is disabled, you've have to navigate through the <a
+                href="/index.html">homepage</a>.
+        </div>
+    </header>
+    <main>
+        <section>
+            <h1>Photo gallery</h1>
+            <p>These photos will power other posts. This is the central source of truth for these images. <a
+                    href="/">Learn more</a></p>
+        </section>
+        <figure class="project windmill" id="windmill">
+            <img src="/images/2025-07-30-windmill.jpeg">
+            <date>2025 July 30</date>
+            <figcaption>Made this windmill from salvaged dowel rods, coroplast and PLA componnents that I printed and
+                modeled.</figcaption>
+        </figure>
+                <figure class="project windmill" id="windmill-2">
+            <img src="/images/2025-07-30-windmill.jpeg">
+            <date>2025 July 30</date>
+            <figcaption>Made this windmill from salvaged dowel rods, coroplast and PLA componnents that I printed and
+                modeled.</figcaption>
+        </figure>
+
+    </main>
+    <footer>
+        Copyright Andrew Minchew 2025
+    </footer>
+
+</body>
+
+</html>
