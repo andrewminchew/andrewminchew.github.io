@@ -22,6 +22,24 @@
 </head>
 
 <body>
+  <style>
+    .gallery {
+      display:flex;
+      flex-direction: row;
+      gap:25px;
+      overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    position: relative; /* To position the pseudo-elements correctly */
+
+    }
+
+    .gallery figure {
+      width:100%;
+      min-width: 100%;
+          scroll-snap-align: center;
+
+    }
+  </style>
   <header>
     <div id="nav-placeholder" hx-get="/index.html" hx-select="#main-nav" hx-trigger="load" hx-swap="outerHTML"> Loading
       main navigation... if JS is disabled, you've have to navigate through the <a href="/index.html">homepage</a>.
@@ -188,12 +206,10 @@
 
 <section class="gallery">
   <figure>
-    <iframe width="315" height="560"
-src="https://youtube.com/shorts/LH4vP1Qw2G4"
-title="YouTube video player"
-frameborder="0"
-allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-allowfullscreen></iframe>
+<video width="100%" controls>
+  <source src="/images/windmill-in-action.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
   </figure>  <figcaption>Just happened to get some serious wind to test it against.</figcaption>  </article>
   </main>
   <footer>
