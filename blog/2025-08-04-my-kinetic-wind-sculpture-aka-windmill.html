@@ -16,40 +16,11 @@
   <!-- ^^ every page stuff ^^ -->
   <!--                        -->
   <!-- vv   unique stuff   vv -->
-  <meta name="robots" content="noindex">
   <title>Andrew Minchew / Blog / My Kinetic Wind Sculpture AKA Windmill</title>
   <meta name="description" contents="description">
 </head>
 
 <body>
-  <style>
-    .gallery {
-      display: flex;
-      flex-direction: row;
-      gap: 25px;
-      overflow-x: scroll;
-      scroll-snap-type: x mandatory;
-      position: relative;
-      padding:25px 0px;
-      border-top: 1px solid black;
-      border-bottom: 1px solid black;
-    }
-
-    .gallery figure {
-      width: 85%;
-      min-width: 85%;
-      scroll-snap-align: center;
-      margin:unset;
-
-    }
-    figure {
-      display: flex;
-      flex-direction: column;
-    }
-    date {
-      display: none;;
-    }
-  </style>
   <header>
     <div id="nav-placeholder" hx-get="/index.html" hx-select="#main-nav" hx-trigger="load" hx-swap="outerHTML"> Loading
       main navigation... if JS is disabled, you've have to navigate through the <a href="/index.html">homepage</a>.
@@ -68,25 +39,6 @@
         <li>My grandpa made a windmill out of popsicle sticks when I was a kid and I thought it was really cool. </li>
         <li>I made my own popsicle stick windmill a few years back, but it&rsquo;s since been lost to decay and a move.
           <br />
-          <style>
-            .embed-container {
-              position: relative;
-              padding-bottom: 56.25%;
-              height: 0;
-              overflow: hidden;
-              max-width: 100%;
-            }
-
-            .embed-container iframe,
-            .embed-container object,
-            .embed-container embed {
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-            }
-          </style>
           <div class='embed-container'><iframe src='https://www.youtube.com/embed/9e-8P1br854' frameborder='0'
               allowfullscreen></iframe></div>
         </li>
