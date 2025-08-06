@@ -24,20 +24,30 @@
 <body>
   <style>
     .gallery {
-      display:flex;
+      display: flex;
       flex-direction: row;
-      gap:25px;
+      gap: 25px;
       overflow-x: scroll;
-    scroll-snap-type: x mandatory;
-    position: relative; /* To position the pseudo-elements correctly */
-
+      scroll-snap-type: x mandatory;
+      position: relative;
+      padding:25px 0px;
+      border-top: 1px solid black;
+      border-bottom: 1px solid black;
     }
 
     .gallery figure {
-      width:100%;
-      min-width: 100%;
-          scroll-snap-align: center;
+      width: 85%;
+      min-width: 85%;
+      scroll-snap-align: center;
+      margin:unset;
 
+    }
+    figure {
+      display: flex;
+      flex-direction: column;
+    }
+    date {
+      display: none;;
     }
   </style>
   <header>
@@ -94,31 +104,26 @@
         <figure class="project windmill gallery-01">
           <img src="/images/2025-08-04-windmill-01-sketch-01.JPG" alt="sketch-01">
           <date>2025-08-04</date>
-          <figcaption>sketch-01</figcaption>
         </figure>
 
         <figure class="project windmill gallery-01">
           <img src="/images/2025-08-04-windmill-01-sketch-02.JPG" alt="sketch-02">
           <date>2025-08-04</date>
-          <figcaption>sketch-02</figcaption>
         </figure>
 
         <figure class="project windmill gallery-01">
           <img src="/images/2025-08-04-windmill-01-sketch-03.JPG" alt="sketch-03">
           <date>2025-08-04</date>
-          <figcaption>sketch-03</figcaption>
         </figure>
 
         <figure class="project windmill gallery-01">
           <img src="/images/2025-08-04-windmill-01-sketch-04.JPG" alt="sketch-04">
           <date>2025-08-04</date>
-          <figcaption>sketch-04</figcaption>
         </figure>
 
         <figure class="project windmill gallery-01">
           <img src="/images/2025-08-04-windmill-01-sketch-05.JPG" alt="sketch-05">
           <date>2025-08-04</date>
-          <figcaption>sketch-05</figcaption>
         </figure>
       </section>
 
@@ -127,23 +132,24 @@
         wanted to make something a little bigger using the same concept.</p>
 
       <section class="gallery">
-     <figure class="project windmill gallery-02">
-            <img src="/images/2025-08-04-windmill-03-base-assembly-01.JPG" alt="base-assembly-01">
-            <date>2025-08-04</date>
-            <figcaption>base-assembly-01</figcaption>
+        <figure class="project windmill gallery-02">
+          <img src="/images/2025-08-04-windmill-03-base-assembly-01.JPG" alt="base-assembly-01">
+          <date>2025-08-04</date>
+          <figcaption>Assembling before all my pieces were printed caused a little anxiety but it worked out in the end.</figcaption>
         </figure>
 
-     <figure class="project windmill gallery-02">
-            <img src="/images/2025-08-04-windmill-03-base-assembly-02.JPG" alt="base-assembly-02">
-            <date>2025-08-04</date>
-            <figcaption>base-assembly-02</figcaption>
+        <figure class="project windmill gallery-02">
+          <img src="/images/2025-08-04-windmill-03-base-assembly-02.JPG" alt="base-assembly-02">
+          <date>2025-08-04</date>
+          <figcaption>Exciting to see the cap on.</figcaption>
         </figure>
-     <figure class="project windmill gallery-02">
-            <img src="/images/2025-08-04-windmill-02-3d-printed-structural-brackets.JPG" alt="3d-printed-structural-brackets">
-            <date>2025-08-04</date>
-            <figcaption>3d-printed-structural-brackets</figcaption>
+        <figure class="project windmill gallery-02">
+          <img src="/images/2025-08-04-windmill-02-3d-printed-structural-brackets.JPG"
+            alt="3d-printed-structural-brackets">
+          <date>2025-08-04</date>
+          <figcaption>Closeup of the brackets</figcaption>
         </figure>
-                     
+
 
       </section>
 
@@ -152,65 +158,70 @@
         the way, printing my own bearing races and cages seemed like a good way to make use of these.</p>
 
       <section class="gallery">
-             <figure class="project windmill gallery-04">
-            <img src="/images/2025-08-04-windmill-04-turntable-bearing-modeling-onshape.JPG" alt="turntable-bearing-modeling-onshape">
-            <date>2025-08-04</date>
-            <figcaption>turntable-bearing-modeling-onshape</figcaption>
+        <figure class="project windmill gallery-04">
+          <img src="/images/2025-08-04-windmill-04-turntable-bearing-modeling-onshape.JPG"
+            alt="turntable-bearing-modeling-onshape">
+          <date>2025-08-04</date>
+          <figcaption>turntable-bearing-modeling-onshape</figcaption>
         </figure>
 
-</section>
+      </section>
       <p>Turns out that bearings are actually hard to get right and add a bunch of unnecessary weight, so once I finally
         got it all together, the only motion in the whole structure way in the flex of the bamboo skewers 😂 Add to that
         the fact that I had picked literally the absolute worst time to be testing a windmill in Houston…</p>
-      <section class="gallery" hx-get="/gallery/index.html" hx-select=".windmill.gallery-02" hx-trigger="load"
-        hx-swap="innerHTML">
-</section>
-     <figure class="project windmill gallery-05">
-            <img src="/images/2025-08-04-windmill-05-assembled.JPG" alt="assembled">
-            <date>2025-08-04</date>
-            <figcaption>All put together and ready to test.</figcaption>
+      <section class="gallery">
+        <figure class="project windmill gallery-05">
+          <img src="/images/2025-08-04-windmill-05-assembled.JPG" alt="assembled">
+          <date>2025-08-04</date>
+          <figcaption>All put together and ready to test.</figcaption>
         </figure>
 
-     <figure class="project windmill gallery-06">
-            <img src="https://www.dropbox.com/scl/fi/bh60ck8th8xledyrbqtse/EBF5D7BD-347C-492D-BCD0-CB7DB2939AB7.GIF?rlkey=371ga74not4jj5vrtyc5w6cik&amp;st=fnw8rmne&amp;raw=1" alt="my windmill just wiggling in the wind">
-            <date>2025-08-04</date>
-            <figcaption>Slightly wobbling in the wind isn't what I was going for.</figcaption>
+        <figure class="project windmill gallery-06">
+          <img
+            src="https://www.dropbox.com/scl/fi/bh60ck8th8xledyrbqtse/EBF5D7BD-347C-492D-BCD0-CB7DB2939AB7.GIF?rlkey=371ga74not4jj5vrtyc5w6cik&amp;st=fnw8rmne&amp;raw=1"
+            alt="my windmill just wiggling in the wind">
+          <date>2025-08-04</date>
+          <figcaption>Slightly wobbling in the wind isn't what I was going for.</figcaption>
         </figure>
-     <figure class="project windmill gallery-06">
-            <img src="/images/2025-08-04-windmill-06-literally-the-worst-timing.jpeg" alt="literally-the-worst-timing">
-            <date>2025-08-04</date>
-            <figcaption>Turns out July has the lowest windspeeds in Houston.</figcaption>
+        <figure class="project windmill gallery-06">
+          <img src="/images/2025-08-04-windmill-06-literally-the-worst-timing.jpeg" alt="literally-the-worst-timing">
+          <date>2025-08-04</date>
+          <figcaption>Turns out July has the lowest windspeeds in Houston.</figcaption>
         </figure>
-
+      </section>
       <p>So I went back to the drawing board with the intent to eliminate the bearings, simplify things, and just rely
         and loose connections to allow for the rotational motion. Between the reduced friction, increased rotor blades
         surface area, and some actual wind to work with, I finally had something that would move!</p>
       <section class="gallery">
-             <figure class="project windmill gallery-07">
-            <img src="/images/2025-08-04-windmill-07-same-but-simpler.JPG" alt="same-but-simpler">
-            <date>2025-08-04</date>
-            <figcaption>V2 assembled and waiting for wind.</figcaption>
+        <figure class="project windmill gallery-07">
+          <img src="/images/2025-08-04-windmill-07-same-but-simpler.JPG" alt="same-but-simpler">
+          <date>2025-08-04</date>
+          <figcaption>V2 assembled and waiting for wind, but with the original rotor.</figcaption>
         </figure>
 
-     <figure class="project windmill gallery-08">
-            <img src="/images/2025-08-04-windmill-08-final-assembly.JPG" alt="final-assembly">
-            <date>2025-08-04</date>
-            <figcaption>final-assembly</figcaption>
+        <figure class="project windmill gallery-08">
+          <img src="/images/2025-08-04-windmill-08-final-assembly.JPG" alt="final-assembly">
+          <date>2025-08-04</date>
+          <figcaption>Final assembly with bigger (and fewer) blades.</figcaption>
         </figure>
 
-</section>
+      </section>
 
       <p>Final step is to run the whole print and assembly process again, document it better, send them out to family
         and friends, and post the final assets to Printables! I&rsquo;ll update this post with a link to the files when
         I get them uploaded.</p>
 
-<section class="gallery">
-  <figure>
-<video width="100%" controls>
-  <source src="/images/windmill-in-action.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-  </figure>  <figcaption>Just happened to get some serious wind to test it against.</figcaption>  </article>
+      <section class="gallery">
+        <figure>
+          <video width="100%" controls>
+            <source src="/images/windmill-in-action.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <figcaption>Just happened to get some serious wind to test it against.</figcaption>
+        </figure>
+        </section>
+        <p>Thanks for reading!</p>
+    </article>
   </main>
   <footer>
     Copyright Andrew Minchew 2025
