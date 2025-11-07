@@ -270,11 +270,17 @@
 
         .modal-actions {
             display: flex;
-            flex-direction:column;
             justify-content: flex-end;
-            gap: 25px;
+            gap: 10px; /* Changed to 10px for consistency */
             margin-top: 20px;
         }
+        
+        /* Specific layout fix for Import Decision Modal */
+        #importDecisionModal .modal-actions {
+            flex-direction: column;
+            gap: 25px;
+        }
+
 
         .modal-actions button {
             padding: 10px 20px;
@@ -282,23 +288,28 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
+            flex-grow: 1; /* Allow buttons to expand in certain layouts */
+        }
+        
+        #downloadNameModalContent .modal-actions button {
+            flex-grow: unset; /* Override expansion for side-by-side buttons */
         }
 
-        #saveStatusBtn {
+        #saveStatusBtn, #saveDownloadBtn {
             background-color: var(--color-primary);
             color: white;
         }
 
-        #saveStatusBtn:hover {
+        #saveStatusBtn:hover, #saveDownloadBtn:hover {
             background-color: var(--color-primary-dark);
         }
 
-        #cancelStatusBtn, #cancelImportBtn {
+        #cancelStatusBtn, #cancelImportBtn, #cancelDownloadBtn {
             background-color: var(--color-border);
             color: var(--color-text-dark);
         }
 
-        #cancelStatusBtn:hover, #cancelImportBtn:hover {
+        #cancelStatusBtn:hover, #cancelImportBtn:hover, #cancelDownloadBtn:hover {
             background-color: #d1d5db;
         }
         
@@ -322,13 +333,21 @@
         .hidden-file-input {
             display: none;
         }
+        
+        #filenameInput {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
     </style>
 </head>
 
 <body>
     <div class="controls">
         <button onclick="document.getElementById('fileInput').click()">Import Dates</button>
-        <button onclick="downloadSpecialDates()">Download Dates</button>
+        <button onclick="openDownloadDialog()">Download Dates</button>
     </div>
     
     <!-- Hidden File Input for Import -->
@@ -357,6 +376,19 @@
             <div class="modal-actions">
                 <button id="cancelStatusBtn" onclick="closeEditDialog()">Cancel</button>
                 <button id="saveStatusBtn" onclick="saveDateStatus()">Save Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Filename Modal -->
+    <div id="downloadNameModalOverlay" class="modal-overlay" onclick="closeDownloadDialog(event)">
+        <div class="modal-content" id="downloadNameModalContent" onclick="event.stopPropagation()">
+            <h3>Save Calendar Data</h3>
+            <p>Enter the filename for your calendar data export (.json format).</p>
+            <input type="text" id="filenameInput" value="" placeholder="e.g., QuickCal Dates 2024-10-27 15:30.json">
+            <div class="modal-actions">
+                <button id="cancelDownloadBtn" onclick="closeDownloadDialog()">Cancel</button>
+                <button id="saveDownloadBtn" onclick="saveDownload()">Download File</button>
             </div>
         </div>
     </div>
@@ -696,13 +728,55 @@
             closeEditDialog();
         }
 
-        // --- Download Functionality (Chronological Sort + Comment) ---
+        // --- Download Dialog and Functionality ---
+        
+        /**
+         * Generates the default filename in "QuickCal Dates YYYY-MM-DD HH:MM.json" format (local time).
+         * @returns {string} The default filename.
+         */
+        function generateDefaultFilename() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
+            
+            return `QuickCal Dates ${year}-${month}-${day} ${hour}:${minute}.json`;
+        }
+        
+        /**
+         * Opens the modal for defining the filename for download.
+         */
+        function openDownloadDialog() {
+            const defaultName = generateDefaultFilename();
+            document.getElementById('filenameInput').value = defaultName;
+            document.getElementById('downloadNameModalOverlay').classList.add('active');
+        }
+        
+        /**
+         * Closes the download dialog.
+         * @param {Event} event - Optional event to stop propagation if clicked on overlay.
+         */
+        function closeDownloadDialog(event) {
+            if (event) event.preventDefault();
+            document.getElementById('downloadNameModalOverlay').classList.remove('active');
+        }
+
 
         /**
          * Creates a JSON file of the special dates, sorts them chronologically, 
-         * and triggers a download with a helpful comment.
+         * and triggers a download with the user-specified filename.
          */
-        function downloadSpecialDates() {
+        function saveDownload() {
+            const filename = document.getElementById('filenameInput').value.trim();
+            
+            if (!filename) {
+                console.error('Download aborted: No filename provided.');
+                // Note: using console.error instead of alert as per instructions
+                return;
+            }
+            
             const specialDates = loadSpecialDates();
             const dateKeys = Object.keys(specialDates);
             
@@ -732,14 +806,11 @@
             jsonString += '}'; // End of the JSON object
 
             // 3. Add the JSON editing comment outside the JSON structure
-            // NOTE: JSON doesn't officially support comments, but this is a common practice for manual text editing.
             const comment = '\n\n// Remember, this is a json file, so the last entry should NOT have a comma after it, but all the other entries should.';
             
             const finalOutput = jsonString + comment;
 
 
-            const filename = `calendar_dates_export_${new Date().toISOString().split('T')[0]}.json`;
-            
             const blob = new Blob([finalOutput], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -752,6 +823,7 @@
             URL.revokeObjectURL(a.href);
 
             console.log(`Special dates downloaded as ${filename}`);
+            closeDownloadDialog();
         }
         
         // --- Import Functionality ---
