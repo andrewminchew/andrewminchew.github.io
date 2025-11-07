@@ -2,51 +2,85 @@
 <html lang="en">
 
 <head>
-      <script async src="https://www.googletagmanager.com/gtag/js?id=G-4G2XVZVG0Y"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-4G2XVZVG0Y');
-  </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Special Date Calendar</title>
     <style>
+        /* CSS Variables for Easy Color Management */
+        :root {
+            /* Primary Status Colors */
+            --color-holiday: lavender; /* Light Red */
+            --color-vacation: rgb(191, 228, 191); /* Light Green */
+            --color-maybe: #bfdbfe;   /* Light Blue */
+            
+            /* Background and Text Colors */
+            --color-bg-light: #f7f7f7;
+            --color-text-dark: #1f2937;
+            --color-text-medium: #6b7280;
+            --color-border: #e5e7eb;
+            --color-primary: #6366f1; /* Indigo */
+            --color-primary-dark: #4f46e5;
+            --color-today-border: #3b82f6; /* Blue for Today marker */
+        }
+
+        /* Base Styles */
         * {
-            font-family: sans-serif;
-            transition: 300ms;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            position: relative;
-            width: calc(100% / 7);
-        }
-
-        tr {
-            display: flex;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 300ms, transform 100ms;
+            box-sizing: border-box;
         }
 
         body {
-            padding: unset;
+            padding: 70px 0 10px 0; /* Increased top padding for fixed header */
             margin: unset;
-            background-color: white;
+            background-color: var(--color-bg-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
+        /* Control Bar & Buttons */
+        .controls {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            max-width: 45em;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: white;
+            z-index: 10;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .controls button {
+            padding: 8px 15px;
+            cursor: pointer;
+            border: 1px solid var(--color-primary-dark);
+            border-radius: 8px;
+            background-color: var(--color-primary);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls button:hover {
+            background-color: var(--color-primary-dark);
+        }
+
+        /* Calendar Grid Layout */
         .title-days {
             width: 100%;
             display: flex;
             position: fixed;
-            background: black;
+            top: 52px; /* Positioned just below the controls */
+            background: var(--color-text-dark);
             color: white;
-            z-index: 1;
+            z-index: 5;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            max-width: 45em;
         }
 
         .title-day {
@@ -54,54 +88,252 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 3px;
-
+            padding: 8px 3px;
+            font-size: 0.85rem;
+            font-weight: 700;
         }
 
-        .today {
-            background-color: #aaf !important;
-            font-weight: bold;
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 45em;
+            margin: auto;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
+        tr {
+            display: flex;
+        }
+
+        td {
+            border: 1px solid var(--color-border);
+            padding: 0;
+            position: relative;
+            width: calc(100% / 7);
+        }
+
+        /* Date Cell Interaction & Display */
         .date-cell {
+            aspect-ratio: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 5px;
+            user-select: none;
+            position: relative;
+            outline: 0px solid transparent; 
+            transition: background-color 300ms, transform 100ms, outline 0ms; 
+        }
+        
+        .date-cell:hover {
+            border: 5px solid var(--color-today-border) !important;
+        }
+        
+        .date-cell:active {
+            transform: scale(0.98);
         }
 
+        /* Date Text Visibility */
         .month,
         .year {
-            opacity: 0%;
+            font-size: 0.7rem;
+            color: var(--color-text-medium);
+            position: absolute;
+            top: 5px;
+            opacity: 0;
+            pointer-events: none;
         }
 
-        .date-cell:hover .month,
-        .date-cell:hover .year {
-            opacity: 100%;
+        .month {
+            left: 5px;
         }
 
-        .month-cell {
-            background-color: lightgray;
+        .year {
+            right: 5px;
         }
 
+        /* Ensure month/year are visible on the first day of the month for context */
         .month-cell .month,
         .month-cell .year {
-            opacity: 100%;
+            opacity: 1;
+            background-color: var(--color-border);
+            border-radius: 4px;
+            padding: 2px 4px;
+            z-index: 1;
         }
-        .date-cell {
-            aspect-ratio: 1;
+
+        .date {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--color-text-dark);
+        }
+
+        /* Special Status Classes */
+        .today {
+            font-weight: bold;
+            border: 5px solid var(--color-today-border) !important;
+            z-index: 2; /* Keep it on top of other cells */
+        }
+
+        /* --- PRIMARY STATUS COLORS (Solid Backgrounds) --- */
+        .holiday {
+            background-color: var(--color-holiday);
+        }
+
+        .vacation {
+            background-color: var(--color-vacation);
+        }
+
+        .maybe {
+            background-color: var(--color-maybe);
+        }
+        
+        /* --- TIME MODIFIER SPLITS (Overrides solid background) --- */
+        
+        /* Morning (Left Half) - 90deg is left-to-right */
+        .holiday.morning { background: linear-gradient(90deg, var(--color-holiday) 0%, var(--color-holiday) 50%, transparent 50%, transparent 100%); }
+        .vacation.morning { background: linear-gradient(90deg, var(--color-vacation) 0%, var(--color-vacation) 50%, transparent 50%, transparent 100%); }
+        .maybe.morning { background: linear-gradient(90deg, var(--color-maybe) 0%, var(--color-maybe) 50%, transparent 50%, transparent 100%); }
+        
+        /* Afternoon (Right Half) - 270deg is right-to-left */
+        .holiday.afternoon { background: linear-gradient(270deg, var(--color-holiday) 0%, var(--color-holiday) 50%, transparent 50%, transparent 100%); }
+        .vacation.afternoon { background: linear-gradient(270deg, var(--color-vacation) 0%, var(--color-vacation) 50%, transparent 50%, transparent 100%); }
+        .maybe.afternoon { background: linear-gradient(270deg, var(--color-maybe) 0%, var(--color-maybe) 50%, transparent 50%, transparent 100%); }
+
+
+        /* --- Modal/Dialog Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; /* Default hidden state */
             justify-content: center;
+            align-items: center;
+            z-index: 20;
         }
-        .title-days {
-            left: calc(50vw - 22.5em - 8px);
+        
+        /* CRITICAL FIX: This rule makes the modal visible when 'active' is added */
+        .modal-overlay.active {
+            display: flex;
         }
-       .title-days, table {
-            max-width: 45em;
-            margin: auto;
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transform: translateY(-50px);
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 10px;
+            font-size: 1.4rem;
+        }
+        
+        .status-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+        }
+        
+        .status-group h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #4b5563;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-direction:column;
+            justify-content: flex-end;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #saveStatusBtn {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        #saveStatusBtn:hover {
+            background-color: var(--color-primary-dark);
+        }
+
+        #cancelStatusBtn, #cancelImportBtn {
+            background-color: var(--color-border);
+            color: var(--color-text-dark);
+        }
+
+        #cancelStatusBtn:hover, #cancelImportBtn:hover {
+            background-color: #d1d5db;
+        }
+        
+        #importDecisionModal button {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        #importDecisionModal button:hover {
+            background-color: #d97706;
+        }
+        
+        #importDecisionModal button.merge {
+             background-color: #10b981;
+        }
+        
+        #importDecisionModal button.merge:hover {
+             background-color: #059669;
+        }
+        
+        .hidden-file-input {
+            display: none;
         }
     </style>
 </head>
 
 <body>
+    <div class="controls">
+        <button onclick="document.getElementById('fileInput').click()">Import Dates</button>
+        <button onclick="downloadSpecialDates()">Download Dates</button>
+    </div>
+    
+    <!-- Hidden File Input for Import -->
+    <input type="file" id="fileInput" accept=".json" class="hidden-file-input" onchange="handleFileSelect(event)">
+
     <div class="title-days">
         <div class="title-day">SUN</div>
         <div class="title-day">MON</div>
@@ -112,17 +344,100 @@
         <div class="title-day">SAT</div>
     </div>
     <table>
-        <tbody id="dateGridBody">
-            <!-- Dates will be inserted here dynamically -->
-        </tbody>
+        <tbody id="dateGridBody"> </tbody>
     </table>
 
+    <!-- Edit Status Modal -->
+    <div id="editStatusModalOverlay" class="modal-overlay" onclick="closeEditDialog(event)">
+        <div class="modal-content" id="editStatusModalContent" onclick="event.stopPropagation()">
+            <h3 id="editModalTitle">Set Status for [Date]</h3>
+            <form id="editStatusForm">
+                <!-- Status groups will be inserted here by JavaScript -->
+            </form>
+            <div class="modal-actions">
+                <button id="cancelStatusBtn" onclick="closeEditDialog()">Cancel</button>
+                <button id="saveStatusBtn" onclick="saveDateStatus()">Save Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Decision Modal -->
+    <div id="importDecisionModalOverlay" class="modal-overlay" onclick="closeImportDecisionDialog(event)">
+        <div class="modal-content" id="importDecisionModal" onclick="event.stopPropagation()">
+            <h3>Import Successful!</h3>
+            <p>A new set of dates has been loaded. How would you like to apply them to your existing calendar data?</p>
+            <div class="modal-actions">
+                <button class="merge" onclick="handleImportDecision('merge')">Merge (Add New/Update Existing)</button>
+                <button id="cancelImportBtn" onclick="closeImportDecisionDialog()">Cancel</button>
+                <button onclick="handleImportDecision('overwrite')">Overwrite Local Data</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Constants
+        const LOCAL_STORAGE_KEY = 'specialCalendarDates';
+        
+        // Base Statuses are mutually exclusive and set the main color/intent.
+        const BASE_STATUS_KEYS = ['holiday', 'vacation', 'maybe'];
+        // Time Modifiers are mutually exclusive and determine if the status is full or split.
+        const TIME_MODIFIER_KEYS = ['morning', 'afternoon'];
+        
+        const STATUS_MAP = {
+            'holiday': 'Holiday',
+            'vacation': 'Vacation',
+            'maybe': 'Maybe',
+            'full_day': 'Full Day', // Used internally for the form logic
+            'morning': 'Morning Only (Left Split)',
+            'afternoon': 'Afternoon Only (Right Split)',
+            'none': 'Clear Date Status'
+        };
+
+        // Current date being edited
+        let currentEditDateKey = null;
+        let importedDatesData = null; // To hold the data from the imported file
+
+        // --- Local Storage Functions ---
+
+        /**
+         * Loads special dates from Local Storage, or returns an empty object if none are found.
+         * @returns {Object} The special dates object.
+         */
+        function loadSpecialDates() {
+            try {
+                const storedDates = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (storedDates) {
+                    return JSON.parse(storedDates);
+                }
+            } catch (e) {
+                console.error("Could not load special dates from Local Storage. Returning empty object.", e);
+            }
+            // If nothing is found or there was an error, return an empty object
+            return {};
+        }
+
+        /**
+         * Saves the special dates object to Local Storage.
+         * @param {Object} dates - The dates object to save.
+         */
+        function saveSpecialDates(dates) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dates));
+                console.log("Special dates saved to Local Storage.");
+            } catch (e) {
+                console.error("Could not save special dates to Local Storage:", e);
+            }
+        }
+        
+        // --- Rendering and Initialization ---
+
         function generateDateGrid() {
             var startDate = new Date();
+            // Go back ~1 year and align to the start of the week
             startDate.setDate(startDate.getDate() - 371 - startDate.getDay());
 
             var endDate = new Date();
+            // Go forward ~1 year and align to the end of the week
             endDate.setDate(endDate.getDate() + 371 + 8 - startDate.getDay());
 
             var dateList = [];
@@ -134,57 +449,57 @@
             }
 
             var tableBody = document.getElementById("dateGridBody");
+            tableBody.innerHTML = '';
             var row;
+            var scrollToTodayFlag = false;
 
-for (var i = 0; i < dateList.length; i++) {
-    if (i % 7 === 0) {
-        row = tableBody.insertRow();
-    }
+            for (var i = 0; i < dateList.length; i++) {
+                if (i % 7 === 0) {
+                    row = tableBody.insertRow();
+                }
 
-    var cell = row.insertCell();
-    cell.classList.add("date-cell");
+                var cell = row.insertCell();
+                cell.classList.add("date-cell");
 
-    if (isToday(dateList[i])) {
-        cell.classList.add("today");
-        scrollToTodayFlag = true; // Set the flag if it's today's date
-    }
+                // YYYY-MM-DD format key
+                const dateKey = dateList[i].toISOString().split('T')[0];
+                cell.setAttribute('data-date', dateKey);
+                
+                // Add click listener for editing - This is where the interaction happens
+                cell.addEventListener('click', () => openEditDialog(dateKey));
 
-    // Check if it's the first day of the month
-    if (dateList[i].getDate() === 1) {
-        cell.classList.add("month-cell");
-    }
+                if (isToday(dateList[i])) {
+                    cell.classList.add("today");
+                    scrollToTodayFlag = true;
+                }
 
-    var monthDiv = document.createElement("div");
-    monthDiv.classList.add("month");
-    monthDiv.innerText = dateList[i].toLocaleString('en-US', { month: 'short' });
-    cell.appendChild(monthDiv);
+                if (dateList[i].getDate() === 1) {
+                    cell.classList.add("month-cell");
+                }
 
-    var dateDiv = document.createElement("div");
-    dateDiv.classList.add("date");
-    dateDiv.innerText = dateList[i].getDate();
-    cell.appendChild(dateDiv);
+                var monthDiv = document.createElement("div");
+                monthDiv.classList.add("month");
+                monthDiv.innerText = dateList[i].toLocaleString('en-US', { month: 'short' });
+                cell.appendChild(monthDiv);
 
-    var yearDiv = document.createElement("div");
-    yearDiv.classList.add("year");
-    yearDiv.innerText = dateList[i].getFullYear();
-    cell.appendChild(yearDiv);
-}
+                var dateDiv = document.createElement("div");
+                dateDiv.classList.add("date");
+                dateDiv.innerText = dateList[i].getDate();
+                cell.appendChild(dateDiv);
 
-// Scroll to today's date and center vertically if needed
-if (scrollToTodayFlag) {
-    var todayCell = document.querySelector('.today');
-    scrollToToday(todayCell);
-}
-
-            // Scroll to today's date and center vertically if needed
-            if (scrollToTodayFlag) {
-                var todayCell = document.querySelector('.today');
-                scrollToToday(todayCell);
+                var yearDiv = document.createElement("div");
+                yearDiv.classList.add("year");
+                yearDiv.innerText = dateList[i].getFullYear();
+                cell.appendChild(yearDiv);
             }
 
-            // added 2024-01-24 to try and tweak scrolling ^^^
+            if (scrollToTodayFlag) {
+                var todayCell = document.querySelector('.today');
+                // Use a slight delay to ensure the DOM is fully rendered before scrolling
+                setTimeout(() => scrollToToday(todayCell), 100); 
+            }
 
-
+            applySpecialDateClasses();
         }
 
         function isToday(date) {
@@ -192,42 +507,330 @@ if (scrollToTodayFlag) {
             return date.toDateString() === today.toDateString();
         }
 
-        // Function to scroll to today's date and center vertically
-        //        function scrollToToday(cell) {
-        //            var rect = cell.getBoundingClientRect();
-        //            var windowHeight = window.innerHeight || document.documentElement.clientHeight;
-        //            var offset = (rect.top + rect.bottom - windowHeight) / 2;
-        //            cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        //        }
-
-
-        // tweaked scroll to center 2024-01-24 081824 
         function scrollToToday(cell) {
-            var rect = cell.getBoundingClientRect();
-            var windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            var cellHeight = rect.bottom - rect.top;
-
-            // Calculate the offset to bring the center of the cell to the center of the viewport
-            var offset = rect.top - (windowHeight - cellHeight) / 2;
-
-            cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        }
-
-
-        // Function to handle mobile tap to show month and year
-        function handleMobileTap(event) {
-            var target = event.target;
-            if (target.classList.contains('date-cell') && target.classList.contains('month-cell')) {
-                // Toggle visibility of month and year
-                target.querySelector('.month').classList.toggle('visible');
-                target.querySelector('.year').classList.toggle('visible');
+            if (cell) {
+                cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
             }
         }
 
-        // Call the function to generate the date grid
+        /**
+         * Clears and reapplies custom CSS classes to dates based on Local Storage data.
+         */
+        function applySpecialDateClasses() {
+            const specialDates = loadSpecialDates();
+            const dateCells = document.querySelectorAll('.date-cell');
+
+            dateCells.forEach(cell => {
+                const dateAttribute = cell.getAttribute('data-date');
+                if (!dateAttribute) return;
+                
+                // 1. Clear all existing special classes
+                [...BASE_STATUS_KEYS, ...TIME_MODIFIER_KEYS].forEach(cls => cell.classList.remove(cls));
+
+                // 2. Apply new classes if data exists for this date
+                if (specialDates[dateAttribute]) {
+                    let classesToAdd = specialDates[dateAttribute];
+                    
+                    // Ensure it's an array if multiple classes are present, or a string for single class
+                    if (typeof classesToAdd === 'string') {
+                         cell.classList.add(classesToAdd);
+                    } else if (Array.isArray(classesToAdd)) {
+                        classesToAdd.forEach(cls => cell.classList.add(cls));
+                    }
+                }
+            });
+        }
+        
+        // --- Edit Dialog Functionality ---
+        
+        /**
+         * Parses the stored class data to determine the current state for the form.
+         * @param {string|string[]} currentDateStatus - The status retrieved from storage.
+         * @returns {{baseStatus: string, timeModifier: string}}
+         */
+        function getCurrentStatusState(currentDateStatus) {
+            let baseStatus = 'none';
+            let timeModifier = 'full_day'; // Full day means no split modifier
+
+            if (currentDateStatus) {
+                const classes = Array.isArray(currentDateStatus) ? currentDateStatus : [currentDateStatus];
+                
+                // Find base status
+                const foundBase = classes.find(cls => BASE_STATUS_KEYS.includes(cls));
+                if (foundBase) {
+                    baseStatus = foundBase;
+                }
+                
+                // Find time modifier
+                const foundModifier = classes.find(cls => TIME_MODIFIER_KEYS.includes(cls));
+                if (foundModifier) {
+                    timeModifier = foundModifier;
+                }
+            }
+            return { baseStatus, timeModifier };
+        }
+
+        /**
+         * Helper to generate a radio button input and its label.
+         */
+        function createRadioButton(name, value, labelText, isChecked) {
+            const radioId = `${name}_${value}`;
+            
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = name;
+            radio.value = value;
+            radio.id = radioId;
+            if (isChecked) {
+                radio.checked = true;
+            }
+
+            const label = document.createElement('label');
+            label.htmlFor = radioId;
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(` ${labelText}`));
+            
+            return label;
+        }
+
+
+        /**
+         * Opens the modal for editing a date's status.
+         * @param {string} dateKey - The date in YYYY-MM-DD format.
+         */
+        function openEditDialog(dateKey) {
+            // Added temporary visual feedback
+            const clickedCell = document.querySelector(`[data-date="${dateKey}"]`);
+            if (clickedCell) {
+                clickedCell.style.outline = '3px solid #f97316';
+                setTimeout(() => { clickedCell.style.outline = ''; }, 300);
+            }
+
+            currentEditDateKey = dateKey;
+            const dates = loadSpecialDates();
+            const currentDateStatus = dates[dateKey];
+            const { baseStatus, timeModifier } = getCurrentStatusState(currentDateStatus);
+            
+            const cellDate = new Date(dateKey + 'T00:00:00');
+            const dateString = cellDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            document.getElementById('editModalTitle').innerText = `Set Status for ${dateString}`;
+            
+            const form = document.getElementById('editStatusForm');
+            form.innerHTML = ''; // Clear previous content
+
+            // --- 1. Base Status Group ---
+            const baseGroup = document.createElement('div');
+            baseGroup.className = 'status-group';
+            baseGroup.innerHTML = '<h4>1. Select Status Type (Color)</h4>';
+            
+            [...BASE_STATUS_KEYS, 'none'].forEach(key => {
+                const isChecked = key === baseStatus;
+                const labelText = STATUS_MAP[key];
+                baseGroup.appendChild(createRadioButton('baseStatus', key, labelText, isChecked));
+            });
+            form.appendChild(baseGroup);
+            
+            // --- 2. Time Modifier Group ---
+            const timeGroup = document.createElement('div');
+            timeGroup.className = 'status-group';
+            timeGroup.innerHTML = '<h4>2. Select Time Slot</h4>';
+            
+            // Full Day option (internal value 'full_day')
+            timeGroup.appendChild(createRadioButton('timeModifier', 'full_day', STATUS_MAP['full_day'], timeModifier === 'full_day'));
+            
+            // Morning/Afternoon options (split)
+            TIME_MODIFIER_KEYS.forEach(key => {
+                const isChecked = key === timeModifier;
+                const labelText = STATUS_MAP[key];
+                timeGroup.appendChild(createRadioButton('timeModifier', key, labelText, isChecked));
+            });
+            form.appendChild(timeGroup);
+            
+            document.getElementById('editStatusModalOverlay').classList.add('active');
+        }
+        
+        /**
+         * Closes the edit dialog.
+         * @param {Event} event - Optional event to stop propagation if clicked on overlay.
+         */
+        function closeEditDialog(event) {
+            if (event) event.preventDefault();
+            document.getElementById('editStatusModalOverlay').classList.remove('active');
+            currentEditDateKey = null;
+        }
+
+        /**
+         * Saves the selected status to Local Storage and re-renders the calendar.
+         */
+        function saveDateStatus() {
+            const selectedBase = document.querySelector('input[name="baseStatus"]:checked');
+            const selectedTime = document.querySelector('input[name="timeModifier"]:checked');
+            
+            if (!selectedBase || !selectedTime) return; 
+
+            const baseStatus = selectedBase.value;
+            const timeModifier = selectedTime.value;
+            const dates = loadSpecialDates();
+            
+            let newClasses = [];
+
+            if (baseStatus === 'none') {
+                // If base is 'none', clear the date
+                delete dates[currentEditDateKey];
+            } else {
+                // 1. Add the base color class
+                newClasses.push(baseStatus);
+                
+                // 2. Add the time modifier class if it's not 'full_day'
+                if (timeModifier !== 'full_day') {
+                    newClasses.push(timeModifier);
+                }
+                
+                // Store as an array if multiple classes, or a string if only one
+                dates[currentEditDateKey] = newClasses.length > 1 ? newClasses : newClasses[0];
+            }
+
+            saveSpecialDates(dates);
+            applySpecialDateClasses();
+            closeEditDialog();
+        }
+
+        // --- Download Functionality (Chronological Sort + Comment) ---
+
+        /**
+         * Creates a JSON file of the special dates, sorts them chronologically, 
+         * and triggers a download with a helpful comment.
+         */
+        function downloadSpecialDates() {
+            const specialDates = loadSpecialDates();
+            const dateKeys = Object.keys(specialDates);
+            
+            // 1. Sort the date keys chronologically (YYYY-MM-DD strings sort correctly lexicographically)
+            dateKeys.sort();
+            
+            let jsonString = '{\n'; // Start of the JSON object
+
+            // 2. Build the JSON string manually to ensure sorted order
+            for (let i = 0; i < dateKeys.length; i++) {
+                const key = dateKeys[i];
+                const value = specialDates[key];
+                
+                // Use JSON.stringify for the value in case it's an array
+                const valueString = JSON.stringify(value); 
+                
+                let line = `  "${key}": ${valueString}`;
+                
+                // Add a comma for all entries except the last one
+                if (i < dateKeys.length - 1) {
+                    line += ',';
+                }
+                
+                jsonString += line + '\n';
+            }
+
+            jsonString += '}'; // End of the JSON object
+
+            // 3. Add the JSON editing comment outside the JSON structure
+            // NOTE: JSON doesn't officially support comments, but this is a common practice for manual text editing.
+            const comment = '\n\n// Remember, this is a json file, so the last entry should NOT have a comma after it, but all the other entries should.';
+            
+            const finalOutput = jsonString + comment;
+
+
+            const filename = `calendar_dates_export_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const blob = new Blob([finalOutput], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+
+            console.log(`Special dates downloaded as ${filename}`);
+        }
+        
+        // --- Import Functionality ---
+
+        /**
+         * Handles the selection of the import file.
+         */
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    // Simple regex to strip JavaScript-style single-line comments (//...)
+                    const content = e.target.result;
+                    const cleanContent = content.replace(/\/\/.*$/gm, '').trim(); 
+                    
+                    const importedData = JSON.parse(cleanContent);
+                    importedDatesData = importedData; // Store globally
+                    openImportDecisionDialog();
+                } catch (error) {
+                    console.error("Error parsing imported file: The file must contain valid JSON. If you manually edited it, ensure all entries except the last one have a comma.", error);
+                    // In a real app, show a message box here instead of console.error
+                }
+            };
+            reader.readAsText(file);
+            
+            // Clear file input so the same file can be imported again
+            event.target.value = null; 
+        }
+
+        /**
+         * Opens the dialog to choose between overwrite or merge.
+         */
+        function openImportDecisionDialog() {
+            document.getElementById('importDecisionModalOverlay').classList.add('active');
+        }
+
+        /**
+         * Closes the import decision dialog.
+         */
+        function closeImportDecisionDialog(event) {
+            if (event) event.preventDefault();
+            document.getElementById('importDecisionModalOverlay').classList.remove('active');
+            importedDatesData = null; // Clear imported data after decision/cancellation
+        }
+
+        /**
+         * Executes the import based on the chosen mode.
+         * @param {string} mode - 'overwrite' or 'merge'.
+         */
+        function handleImportDecision(mode) {
+            if (!importedDatesData) {
+                closeImportDecisionDialog();
+                return;
+            }
+            
+            let currentDates = loadSpecialDates();
+            let newDates = importedDatesData;
+            let finalDates = {};
+
+            if (mode === 'overwrite') {
+                finalDates = newDates;
+                console.log("Local dates overwritten with imported data.");
+            } else if (mode === 'merge') {
+                // Merge: Existing properties in newDates overwrite currentDates properties
+                finalDates = { ...currentDates, ...newDates };
+                console.log("Local dates merged with imported data.");
+            }
+
+            saveSpecialDates(finalDates);
+            applySpecialDateClasses(); // Re-render the calendar
+            closeImportDecisionDialog();
+        }
+
+        // --- Initial Call ---
         generateDateGrid();
     </script>
-
 </body>
 
 </html>
