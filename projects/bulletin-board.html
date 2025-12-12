@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Christmas Bulletin Board</title>
-    <meta name="robots" content="noindex, nofollow">
+    
     <style>
         /* Simple, mobile-friendly styles */
         :root {
@@ -93,8 +93,11 @@
 </head>
 <body>
     <div class="container">
+        <!-- Added a robots meta tag as discussed for privacy -->
+        <meta name="robots" content="noindex, nofollow">
+        
         <h1>Family Bulletin Board</h1>
-        <p>Post your Christmas plans, notes, or funny holiday anecdotes here!</p>
+        <p>Are you coming and what are you bringing? Refresh to see your post.</p>
 
         <h2>Post a Message</h2>
         <form id="input-form">
@@ -111,17 +114,18 @@
     </div>
     
     <script>
-        // === CONFIGURATION: UPDATE THESE 4 LINES ===
+        // === CONFIGURATION: Ensure these values are correct ===
+        // NOTE: For data to load, the Google Sheet must be shared publicly ("Anyone with the link can view").
 
-        // 1. URL ID: The unique ID from your Google Sheet URL (the part after /d/ and before /edit)
-        const SPREADSHEET_ID = '1gSfkekQFsbmAFYf4GuMXiP0Fj3GPoJmSuwlN560l7yE'; <-- REPLACE THIS -->
-        // 2. API Key: The key obtained from the Google Cloud Console (Step 3)
-        const API_KEY = 'AIzaSyA2I9eOSdA9ad7BN6vBH7F4Nqf0NfYQs2o'; <-- REPLACE THIS -->
-        // 3. Form Submit URL: The base URL from your "pre-filled link" (everything before 'viewform')
-        const FORM_ACTION_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSc1UwT0x5BPmlF_4aH-14Arxx5IFiHx2MjgqDzm1RXMTR7uUg'; <-- REPLACE THIS -->
+        // 1. Sheet ID: The unique ID from your Google Sheet URL (the part after /d/ and before /edit)
+        const SPREADSHEET_ID = '1gSfkekQFsbmAFYf4GuMXiP0Fj3GPoJmSuwlN560l7yE'; 
+        // 2. API Key: The key obtained from the Google Cloud Console 
+        const API_KEY = 'AIzaSyA2I9eOSdA9ad7BN6vBH7F4Nqf0NfYQs2o'; 
+        // 3. Form Submit URL: The base URL from your "pre-filled link" 
+        const FORM_ACTION_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSc1UwT0x5BPmlF_4aH-14Arxx5IFiHx2MjgqDzm1RXMTR7uUg'; 
         // 4. Form Field IDs: The entry IDs you extracted from the pre-filled link
-        const NAME_FIELD_ID = 'entry.1269208606'; <-- REPLACE THIS -->
-        const MESSAGE_FIELD_ID = 'entry.93853995'; <-- REPLACE THIS -->
+        const NAME_FIELD_ID = 'entry.1269208606'; 
+        const MESSAGE_FIELD_ID = 'entry.93853995'; 
 
         // NOTE: The Sheet range assumes Timestamp is Column A, Nickname is B, and Message is C.
         const SHEETS_RANGE = 'Form Responses 1!A:C';
@@ -137,7 +141,23 @@
             try {
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEETS_RANGE}?key=${API_KEY}`;
                 const response = await fetch(url);
-                const data = await response.json();
+
+                if (!response.ok) {
+                    // Log the status and body to catch API errors (e.g., 400 or 403) before JSON parsing
+                    const errorText = await response.text();
+                    console.error(`🔴 API HTTP Error ${response.status}: Failed to load sheet data.`);
+                    // The error text will often be an HTML page, which is what causes the SyntaxError
+                    console.error('Check 1: SPREADSHEET_ID and API_KEY are correct.');
+                    console.error('Check 2: Google Sheets API is enabled for your project.');
+                    console.error('Check 3: The Google Sheet is shared with "Anyone with the link can view."');
+                    console.error('Check 4: API Key restrictions allow requests from your live domain.');
+                    console.error('Error Response Body Start:', errorText.substring(0, 100));
+                    MESSAGE_BOARD.innerHTML = '<p style="color:red;">Error loading messages. Check console for details (likely 400 or 403 error).</p>';
+                    return;
+                }
+
+                // If response is OK, attempt to parse JSON
+                const data = await response.json(); 
                 const messages = data.values; // Array of arrays: [[Timestamp, Name, Message], ...]
 
                 MESSAGE_BOARD.innerHTML = ''; 
@@ -164,8 +184,8 @@
                 });
 
             } catch (error) {
-                console.error('Error fetching sheet data:', error);
-                MESSAGE_BOARD.innerHTML = '<p style="color:red;">Error loading messages. Please check console and API key.</p>';
+                console.error('Unhandled JavaScript Error during fetch/render:', error);
+                MESSAGE_BOARD.innerHTML = '<p style="color:red;">A critical error occurred. Check the console for "Unhandled JavaScript Error."</p>';
             }
         }
 
@@ -196,10 +216,10 @@
                 document.getElementById('messageInput').value = ''; // Clear message input
                 
                 // Delay refresh slightly to allow Google Sheet time to process the form submission
-                setTimeout(fetchAndRenderMessages, 2000); 
+                setTimeout(fetchAndRenderMessages, 3000); 
 
             } catch (error) {
-                console.error('Submission error:', error);
+                console.error('Submission error (Forms endpoint):', error);
                 FORM_STATUS.style.color = 'var(--error-color)';
                 FORM_STATUS.textContent = 'Posting failed. See console.';
             } finally {
