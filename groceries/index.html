@@ -19,6 +19,7 @@
     h1 {
       text-align: center;
       font-size: 1.5rem;
+      margin-bottom: 10px;
     }
 
     .actions {
@@ -27,6 +28,13 @@
       background: white;
       padding: 10px 0;
       border-bottom: 2px solid #eee;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .action-row {
       display: flex;
       gap: 10px;
     }
@@ -52,6 +60,40 @@
       opacity: 0.8;
     }
 
+    .sort-toggle {
+      display: flex;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .sort-toggle button {
+      border: none;
+      border-radius: 0;
+      background-color: #f8f8f8;
+      color: #333;
+    }
+
+    .sort-toggle button.active {
+      background-color: #007aff;
+      color: white;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .status-row button {
+      flex: none;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: normal;
+    }
+
     ul {
       list-style-type: none;
       padding: 0;
@@ -63,6 +105,16 @@
       border-bottom: 1px solid #f0f0f0;
       display: flex;
       align-items: center;
+    }
+
+    li.group-header {
+      border-bottom: none;
+      padding: 14px 0 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #999;
     }
 
     label {
@@ -78,6 +130,18 @@
       width: 20px;
       height: 20px;
       cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .empty-state, .error-state {
+      text-align: center;
+      color: #888;
+      padding: 30px 10px;
+      font-size: 0.95rem;
+    }
+
+    .error-state {
+      color: #c00;
     }
   </style>
 </head>
@@ -87,77 +151,160 @@
   <h1>Grocery Inventory Checklist</h1>
 
   <div class="actions">
-    <button class="primary" onclick="copyToClipboard()">Copy Selected</button>
-    <button onclick="uncheckAll()">Clear All</button>
+    <div class="action-row">
+      <button class="primary" onclick="copyToClipboard()">Copy Selected</button>
+      <button onclick="uncheckAll()">Clear All</button>
+    </div>
+    <div class="sort-toggle">
+      <button id="sortStoreBtn" class="active" onclick="setSortMode('store')">Store Order</button>
+      <button id="sortHouseBtn" onclick="setSortMode('house')">By Location (A-Z)</button>
+    </div>
+    <div class="status-row">
+      <span id="statusText">Loading items…</span>
+      <button onclick="loadItems()">Refresh</button>
+    </div>
   </div>
 
   <ul id="itemList"></ul>
+
   <script>
-    // Your exact item list in order
-    const items = [
-      "bananas",
-      "apples",
-      "chia seeds",
-      "almonds",
-      "immodium",
-      "probiotics",
-      "vitamins",
-      "doedorant",
-      "body wash",
-      "shampoo",
-      "moisturizer",
-      "wet cat food",
-      "dry cat food",
-      "kitty litter",
-      "dog food",
-      "dog treats",
-      "bottle water",
-      "laundry detergent",
-      "dish soap",
-      "dishwasher pods",
-      "hand soap",
-      "spray cleaner",
-      "toilet paper",
-      "paper towels",
-      "orange juice",
-      "creamer",
-      "vanilla almond milk",
-      "whole milk",
-      "half and half",
-      "heavy cream",
-      "eggs",
-      "fizzy water",
-      "sleepy tea",
-      "black tea earl gray",
-      "decaf earl gray tea",
-      "green tea",
-      "coffee",
-      "decaf coffee",
-      "ritz",
-      "goldfish",
-      "granola",
-      "pudding packs",
-      "gummy snacks",
-      "circus cookies",
-      "veggie sauce",
-      "apple sauce",
-      "parmesan cheese",
-      "pizzas"
-    ];
+    // Google Sheet config — expects columns: item | house position | store order
+    const SHEET_ID = "1HUneSd5iBrg3zILGGJYFyObaxIJTvGuKd4DPYhZzHcA";
+    const SHEET_NAME = "Sheet1";
 
     const listElement = document.getElementById("itemList");
+    const statusText = document.getElementById("statusText");
+    const sortStoreBtn = document.getElementById("sortStoreBtn");
+    const sortHouseBtn = document.getElementById("sortHouseBtn");
 
-    // Build the checkbox list dynamically
-    items.forEach((item) => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-      <label>
-        <input type="checkbox" value="${item}">
-        ${item}
-      </label>
-    `;
-      listElement.appendChild(li);
-    });
+    let allItems = []; // [{ name, housePosition, storeOrder }]
+    let sortMode = "store"; // "store" | "house"
+    let loadTimeoutId = null;
+
+    function getCheckedNames() {
+      return new Set(
+        Array.from(document.querySelectorAll('#itemList input[type="checkbox"]:checked'))
+          .map(cb => cb.value)
+      );
+    }
+
+    function sortedItems() {
+      const copy = [...allItems];
+      if (sortMode === "store") {
+        copy.sort((a, b) => a.storeOrder - b.storeOrder);
+      } else {
+        copy.sort((a, b) => {
+          const houseCompare = a.housePosition.localeCompare(b.housePosition);
+          if (houseCompare !== 0) return houseCompare;
+          return a.storeOrder - b.storeOrder;
+        });
+      }
+      return copy;
+    }
+
+    function renderList() {
+      const checkedNames = getCheckedNames();
+      listElement.innerHTML = "";
+
+      if (allItems.length === 0) {
+        listElement.innerHTML = `<li class="empty-state">No items found in the sheet yet.</li>`;
+        return;
+      }
+
+      const items = sortedItems();
+      let lastGroup = null;
+
+      items.forEach((item) => {
+        if (sortMode === "house" && item.housePosition !== lastGroup) {
+          lastGroup = item.housePosition;
+          const header = document.createElement("li");
+          header.className = "group-header";
+          header.textContent = item.housePosition || "(no location)";
+          listElement.appendChild(header);
+        }
+
+        const li = document.createElement("li");
+        const checked = checkedNames.has(item.name) ? "checked" : "";
+        li.innerHTML = `
+          <label>
+            <input type="checkbox" value="${item.name}" ${checked}>
+            ${item.name}
+          </label>
+        `;
+        listElement.appendChild(li);
+      });
+    }
+
+    function setSortMode(mode) {
+      sortMode = mode;
+      sortStoreBtn.classList.toggle("active", mode === "store");
+      sortHouseBtn.classList.toggle("active", mode === "house");
+      renderList();
+    }
+
+    // We load via JSONP (a <script> tag) rather than fetch(), because Google's
+    // gviz endpoint doesn't reliably send CORS headers for fetch()/XHR requests,
+    // even on a publicly-viewable sheet. Script tags aren't subject to CORS,
+    // so this sidesteps the problem entirely.
+    function showLoadError(message) {
+      listElement.innerHTML = `<li class="error-state">${message}</li>`;
+      statusText.textContent = "Load failed";
+    }
+
+    function handleSheetResponse(json) {
+      if (loadTimeoutId) { clearTimeout(loadTimeoutId); loadTimeoutId = null; }
+
+      if (!json || json.status === "error") {
+        const detail = json && json.errors && json.errors[0]
+          ? (json.errors[0].detailed_message || json.errors[0].message)
+          : "Unknown error";
+        showLoadError(`Google Sheets returned an error: ${detail}. Double check the sheet ID and that the "${SHEET_NAME}" tab exists.`);
+        console.error("gviz error response:", json);
+        return;
+      }
+
+      try {
+        const rows = (json.table && json.table.rows) || [];
+        allItems = rows
+          .map(r => r.c || [])
+          .filter(c => c[0] && c[0].v !== null && c[0].v !== undefined && String(c[0].v).trim() !== "")
+          .map(c => ({
+            name: String(c[0].v).trim(),
+            housePosition: (c[1] && c[1].v !== null && c[1].v !== undefined) ? String(c[1].v).trim() : "",
+            storeOrder: (c[2] && c[2].v !== null && c[2].v !== undefined) ? Number(c[2].v) : 0
+          }));
+
+        renderList();
+        const now = new Date();
+        statusText.textContent = `${allItems.length} items · updated ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      } catch (err) {
+        showLoadError("Couldn't parse the data from the sheet. Check the column order matches: item, house position, store order.");
+        console.error(err);
+      }
+    }
+    window.handleSheetResponse = handleSheetResponse;
+
+    function loadItems() {
+      statusText.textContent = "Loading items…";
+
+      // Remove any previous loader script so repeated Refresh clicks don't pile up
+      const existing = document.getElementById("sheetLoaderScript");
+      if (existing) existing.remove();
+      if (loadTimeoutId) clearTimeout(loadTimeoutId);
+
+      const script = document.createElement("script");
+      script.id = "sheetLoaderScript";
+      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:handleSheetResponse&sheet=${encodeURIComponent(SHEET_NAME)}`;
+      script.onerror = () => {
+        showLoadError(`Couldn't reach the sheet. Check the sheet ID (${SHEET_ID}) is correct and it's shared as "Anyone with the link can view".`);
+      };
+      document.body.appendChild(script);
+
+      // If Google never calls our handler (bad ID, network issue, etc.), fail after 10s
+      loadTimeoutId = setTimeout(() => {
+        showLoadError("Timed out waiting for a response from Google Sheets. Hit Refresh to try again.");
+      }, 10000);
+    }
 
     // Copy checked items as HTML list elements for Apple Reminders
     async function copyToClipboard() {
@@ -202,6 +349,9 @@
       const checkboxes = document.querySelectorAll('#itemList input[type="checkbox"]');
       checkboxes.forEach(cb => cb.checked = false);
     }
+
+    // Load fresh from the sheet on page load
+    loadItems();
   </script>
 </body>
 
