@@ -161,7 +161,7 @@
     </div>
     <div class="status-row">
       <span id="statusText">Loading items…</span>
-      <button onclick="confirmRefresh()">Refresh from Sheet</button>
+      <button onclick="loadItems()">Refresh</button>
     </div>
   </div>
 
@@ -177,52 +177,15 @@
     const sortStoreBtn = document.getElementById("sortStoreBtn");
     const sortHouseBtn = document.getElementById("sortHouseBtn");
 
-    const STORAGE_KEY = "groceryInventoryState";
-
     let allItems = []; // [{ name, housePosition, storeOrder }]
-    let checkedNames = new Set(); // names of currently-checked items, persisted
     let sortMode = "store"; // "store" | "house"
-    let lastUpdated = null; // Date, when items were last pulled from the sheet
     let loadTimeoutId = null;
 
-    // Persist items + checked state + sort mode across reloads, so switching
-    // apps or the page refreshing mid-inventory doesn't wipe your progress.
-    function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          items: allItems,
-          checked: Array.from(checkedNames),
-          sortMode: sortMode,
-          lastUpdated: lastUpdated ? lastUpdated.toISOString() : null
-        }));
-      } catch (err) {
-        console.error("Couldn't save state to localStorage:", err);
-      }
-    }
-
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return false;
-        const state = JSON.parse(raw);
-        if (!state || !Array.isArray(state.items)) return false;
-
-        allItems = state.items;
-        checkedNames = new Set(state.checked || []);
-        sortMode = state.sortMode === "house" ? "house" : "store";
-        lastUpdated = state.lastUpdated ? new Date(state.lastUpdated) : null;
-        return true;
-      } catch (err) {
-        console.error("Couldn't load saved state:", err);
-        return false;
-      }
-    }
-
-    function formatStatus() {
-      const when = lastUpdated
-        ? lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : "unknown time";
-      return `${allItems.length} items · last pulled ${when}`;
+    function getCheckedNames() {
+      return new Set(
+        Array.from(document.querySelectorAll('#itemList input[type="checkbox"]:checked'))
+          .map(cb => cb.value)
+      );
     }
 
     function sortedItems() {
@@ -240,10 +203,11 @@
     }
 
     function renderList() {
+      const checkedNames = getCheckedNames();
       listElement.innerHTML = "";
 
       if (allItems.length === 0) {
-        listElement.innerHTML = `<li class="empty-state">No items loaded yet. Hit "Refresh from Sheet" to pull your list.</li>`;
+        listElement.innerHTML = `<li class="empty-state">No items found in the sheet yet.</li>`;
         return;
       }
 
@@ -271,21 +235,11 @@
       });
     }
 
-    // Keep checkedNames (and localStorage) in sync whenever a checkbox is toggled
-    listElement.addEventListener("change", (e) => {
-      if (e.target && e.target.type === "checkbox") {
-        if (e.target.checked) checkedNames.add(e.target.value);
-        else checkedNames.delete(e.target.value);
-        saveState();
-      }
-    });
-
     function setSortMode(mode) {
       sortMode = mode;
       sortStoreBtn.classList.toggle("active", mode === "store");
       sortHouseBtn.classList.toggle("active", mode === "house");
       renderList();
-      saveState();
     }
 
     // We load via JSONP (a <script> tag) rather than fetch(), because Google's
@@ -320,28 +274,15 @@
             storeOrder: (c[2] && c[2].v !== null && c[2].v !== undefined) ? Number(c[2].v) : 0
           }));
 
-        // A fresh pull is a new inventory run — start with everything unchecked
-        checkedNames = new Set();
-        lastUpdated = new Date();
         renderList();
-        statusText.textContent = formatStatus();
-        saveState();
+        const now = new Date();
+        statusText.textContent = `${allItems.length} items · updated ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
       } catch (err) {
         showLoadError("Couldn't parse the data from the sheet. Check the column order matches: item, house position, store order.");
         console.error(err);
       }
     }
     window.handleSheetResponse = handleSheetResponse;
-
-    // Prompts for confirmation, since refreshing wipes the current checklist
-    function confirmRefresh() {
-      const warning = allItems.length > 0
-        ? "Refresh from Google Sheets? This will reset all checked items."
-        : "Load your list from Google Sheets?";
-      if (confirm(warning)) {
-        loadItems();
-      }
-    }
 
     function loadItems() {
       statusText.textContent = "Loading items…";
@@ -405,25 +346,12 @@
 
     // Quick helper to reset all checkboxes
     function uncheckAll() {
-      checkedNames = new Set();
       const checkboxes = document.querySelectorAll('#itemList input[type="checkbox"]');
       checkboxes.forEach(cb => cb.checked = false);
-      saveState();
     }
 
-    // On page load, use whatever was last pulled from the sheet (and its
-    // checked/unchecked state) instead of hitting Google Sheets automatically.
-    // Only the "Refresh from Sheet" button pulls fresh data.
-    const hadSavedState = loadState();
-    if (hadSavedState) {
-      sortStoreBtn.classList.toggle("active", sortMode === "store");
-      sortHouseBtn.classList.toggle("active", sortMode === "house");
-      renderList();
-      statusText.textContent = formatStatus();
-    } else {
-      renderList();
-      statusText.textContent = `No items loaded yet — tap "Refresh from Sheet" to pull your list.`;
-    }
+    // Load fresh from the sheet on page load
+    loadItems();
   </script>
 </body>
 
