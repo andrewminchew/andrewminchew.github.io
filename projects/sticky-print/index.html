@@ -205,7 +205,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.1</h1>
+  <h1>StickyPrint v1.2</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -241,9 +241,10 @@
 <div class="dlg-back" id="dlgBack">
   <div class="dlg" role="dialog" aria-labelledby="dlgTitle">
     <h2 id="dlgTitle">Your PDF is ready</h2>
+    <img id="dlgPreview" alt="Preview of the page" style="display:block;margin:0 auto 12px;width:150px;border:1px solid var(--line);background:#fff">
     <p>Phone browsers add a URL, date, and page number to printed web pages. A PDF prints cleanly: open it, then choose Print from the PDF viewer or share sheet.</p>
     <div class="stack">
-      <a class="btn primary" id="dlgOpen" target="_blank" rel="noopener" download="stickyprint.pdf">Open PDF</a>
+      <a class="btn primary" id="dlgOpen" target="_blank" rel="noopener">Open PDF</a>
       <button class="btn" id="dlgShare">Share or print…</button>
       <button class="btn" id="dlgClose">Close</button>
     </div>
@@ -559,12 +560,16 @@
   async function makePdf(mode) {
     toast('Preparing PDF…');
     try {
-      const blob = await pdfFromCanvas(await renderCanvas(mode));
+      const canvas = await renderCanvas(mode);
+      const pv = document.createElement('canvas'); pv.width = 300; pv.height = Math.round(300 * canvas.height / canvas.width);
+      pv.getContext('2d').drawImage(canvas, 0, 0, pv.width, pv.height);
+      $('dlgPreview').src = pv.toDataURL('image/jpeg', 0.7);
+      const blob = await pdfFromCanvas(canvas);
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       pdfUrl = URL.createObjectURL(blob);
       const name = mode === 'template' ? 'stickyprint-template.pdf' : 'stickyprint-sheet.pdf';
       pdfFile = new File([blob], name, { type: 'application/pdf' });
-      $('dlgOpen').href = pdfUrl; $('dlgOpen').setAttribute('download', name);
+      $('dlgOpen').href = pdfUrl;
       $('dlgShare').style.display = (navigator.canShare && navigator.canShare({ files: [pdfFile] })) ? '' : 'none';
       toastEl.style.display = 'none';
       $('dlgBack').classList.add('open');
