@@ -103,6 +103,7 @@
   .crop {
     position: relative; width: 288px; height: 288px; margin: 0 auto 14px; overflow: hidden;
     background: #e9edf0; border: 2px solid var(--ink); touch-action: none; cursor: grab;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   }
   .crop.dragging { cursor: grabbing; }
   .crop img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
@@ -167,6 +168,15 @@
   }
   .reviewbar { display: none; }
   .file-input { display: none; }
+  body.editing, body.reviewing { overscroll-behavior: none; }
+  .dlg-back { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 90; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .dlg-back.open { display: flex; }
+  .dlg { background: var(--paper); color: #111; border-radius: 10px; padding: 20px; max-width: 360px; width: 100%; }
+  @media (prefers-color-scheme: dark) { .dlg { background: #263037; color: var(--ink); } }
+  .dlg h2 { margin: 0 0 8px; font-size: 1.05rem; }
+  .dlg p { margin: 0 0 14px; line-height: 1.45; font-size: .95rem; }
+  .dlg .stack { margin-top: 0; }
+  .dlg a.btn { text-decoration: none; text-align: center; display: block; }
 
   /* ---------- Print ---------- */
   @page { size: letter; margin: 0; }
@@ -195,7 +205,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint</h1>
+  <h1>StickyPrint v1.1</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -228,6 +238,17 @@
 <div class="reviewbar b"><button class="btn primary" id="rvPrint">Print sheet</button></div>
 
 <input type="file" accept="image/*" class="file-input" id="fileInput">
+<div class="dlg-back" id="dlgBack">
+  <div class="dlg" role="dialog" aria-labelledby="dlgTitle">
+    <h2 id="dlgTitle">Your PDF is ready</h2>
+    <p>Phone browsers add a URL, date, and page number to printed web pages. A PDF prints cleanly: open it, then choose Print from the PDF viewer or share sheet.</p>
+    <div class="stack">
+      <a class="btn primary" id="dlgOpen" target="_blank" rel="noopener" download="stickyprint.pdf">Open PDF</a>
+      <button class="btn" id="dlgShare">Share or print…</button>
+      <button class="btn" id="dlgClose">Close</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -406,6 +427,8 @@
 
   function attachGestures(crop, slot, place, zoom) {
     const pts = new Map(); let lastDist = 0;
+    // Stop the browser from scrolling the page/panel while the finger is on the photo (iOS ignores touch-action in scroll containers)
+    ['touchstart', 'touchmove'].forEach(t => crop.addEventListener(t, e => e.preventDefault(), { passive: false }));
     crop.addEventListener('pointerdown', e => {
       crop.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       crop.classList.add('dragging'); lastDist = 0;
@@ -455,15 +478,101 @@
   });
 
   // ---------- Printing ----------
+  const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches;
   function printMode(mode) {
+    if (isTouchDevice()) { makePdf(mode); return; }
     document.body.classList.add('print-' + mode);
     const cleanup = () => document.body.classList.remove('print-' + mode);
     window.addEventListener('afterprint', cleanup, { once: true });
     setTimeout(cleanup, 4000);
-    // make sure photos are laid out at full size before the print snapshot
     renderAll();
     requestAnimationFrame(() => window.print());
   }
+
+  // ---------- PDF (phones/tablets: avoids browser-added URL/date footers) ----------
+  const loadImg = src => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
+
+  async function renderCanvas(mode) {
+    const DPI = 200, k = DPI / PX;
+    const c = document.createElement('canvas');
+    c.width = Math.round(PAGE.w * DPI); c.height = Math.round(PAGE.h * DPI);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    const inset = 2 / PX;                      // matches the 2px outline on screen
+    for (let i = 0; i < slots.length; i++) {
+      const p = slotPos(i), x = p.x * DPI, y = p.y * DPI, full = NOTE * DPI;
+      if (mode === 'template') {
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 2 * k;
+        ctx.strokeRect(x + k, y + k, full - 2 * k, full - 2 * k);
+        ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = 'italic ' + 13 * k + 'px ' + 'Helvetica, Arial, sans-serif';
+        ctx.fillText('Adhesive here', x + full / 2, y + 14 * k + 8 * k);
+        ctx.font = 'bold ' + 16 * k + 'px Helvetica, Arial, sans-serif';
+        ctx.fillText('Slot ' + (i + 1), x + full / 2, y + full / 2);
+      } else if (slots[i]) {
+        const slot = slots[i], im = await loadImg(slot.src);
+        const S = (NOTE - 2 * inset) * DPI, ix = x + inset * DPI, iy = y + inset * DPI;
+        const base = Math.max(S / im.naturalWidth, S / im.naturalHeight);
+        const dw = im.naturalWidth * base * slot.scale, dh = im.naturalHeight * base * slot.scale;
+        ctx.save(); ctx.beginPath(); ctx.rect(ix, iy, S, S); ctx.clip();
+        ctx.drawImage(im, ix + (S - dw) / 2 + slot.ox * S, iy + (S - dh) / 2 + slot.oy * S, dw, dh);
+        ctx.restore();
+      }
+    }
+    if (mode === 'template') {
+      const bx = (PAGE.w - BAR_MARGIN - BAR_W) * DPI, by = TOP * DPI;
+      ctx.fillStyle = '#c0c0c0'; ctx.fillRect(bx, by, BAR_W * DPI, gridH * DPI);
+      ctx.save(); ctx.translate(bx + BAR_W * DPI / 2, by + gridH * DPI / 2); ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = '#333'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 11 * k + 'px Helvetica, Arial, sans-serif';
+      ctx.fillText('StickyPrint: print this template, stick notes in the boxes, feed the sheet back in the same way, then print your photos.', 0, 0);
+      ctx.restore();
+    }
+    return c;
+  }
+
+  // Minimal single-page PDF wrapping one full-page JPEG
+  async function pdfFromCanvas(canvas) {
+    const jpg = new Uint8Array(await (await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92))).arrayBuffer());
+    const enc = new TextEncoder(), parts = [], offsets = []; let len = 0;
+    const push = d => { const b = typeof d === 'string' ? enc.encode(d) : d; parts.push(b); len += b.length; };
+    const W = PAGE.w * 72, H = PAGE.h * 72;
+    const content = 'q ' + W + ' 0 0 ' + H + ' 0 0 cm /Im0 Do Q';
+    push('%PDF-1.4\n');
+    const obj = (n, body) => { offsets[n] = len; push(n + ' 0 obj\n' + body + '\nendobj\n'); };
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Contents 4 0 R /Resources << /XObject << /Im0 5 0 R >> >> >>');
+    obj(4, '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
+    offsets[5] = len;
+    push('5 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + canvas.width + ' /Height ' + canvas.height +
+         ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n');
+    push(jpg); push('\nendstream\nendobj\n');
+    const xref = len;
+    let x = 'xref\n0 6\n0000000000 65535 f \n';
+    for (let n = 1; n <= 5; n++) x += String(offsets[n]).padStart(10, '0') + ' 00000 n \n';
+    push(x + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF');
+    return new Blob(parts, { type: 'application/pdf' });
+  }
+
+  let pdfUrl = null, pdfFile = null;
+  async function makePdf(mode) {
+    toast('Preparing PDF…');
+    try {
+      const blob = await pdfFromCanvas(await renderCanvas(mode));
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      pdfUrl = URL.createObjectURL(blob);
+      const name = mode === 'template' ? 'stickyprint-template.pdf' : 'stickyprint-sheet.pdf';
+      pdfFile = new File([blob], name, { type: 'application/pdf' });
+      $('dlgOpen').href = pdfUrl; $('dlgOpen').setAttribute('download', name);
+      $('dlgShare').style.display = (navigator.canShare && navigator.canShare({ files: [pdfFile] })) ? '' : 'none';
+      toastEl.style.display = 'none';
+      $('dlgBack').classList.add('open');
+    } catch (e) { toast('Could not create the PDF. Try again, or use a desktop browser to print.'); }
+  }
+  $('dlgClose').onclick = () => $('dlgBack').classList.remove('open');
+  $('dlgShare').onclick = () => { navigator.share({ files: [pdfFile], title: pdfFile.name }).catch(() => {}); };
+
   $('btnTemplate').onclick = $('mBtnTemplate').onclick = () => printMode('template');
   $('btnPrint').onclick = $('rvPrint').onclick = () => printMode('sheet');
 
