@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StickyPrint</title>
+<style>
+  :root {
+    --desk: #dfe4e8;
+    --ink: #1d2a33;
+    --ink-soft: #55646f;
+    --line: #b9c3cb;
+    --paper: #ffffff;
+    --accent: #1f6f78;
+    --accent-ink: #ffffff;
+    --note: #f3d64e;
+    --danger: #a3341f;
+    --font: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --desk: #1c2328;
+      --ink: #e8edf0;
+      --ink-soft: #9aa9b4;
+      --line: #3a4750;
+      --accent: #5bb7c0;
+      --accent-ink: #0d1a1d;
+      --danger: #ff8d76;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--desk);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  header.top {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+  }
+  header.top h1 { margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: .01em; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    border: 2px solid var(--ink); background: transparent; border-radius: 6px;
+    padding: 9px 14px; font-weight: 600; min-height: 44px;
+  }
+  .btn:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn[disabled] { opacity: .45; cursor: default; }
+
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; padding: 20px; align-items: start; }
+  .stage { display: flex; justify-content: center; min-width: 0; }
+  .sheet-wrap { position: relative; }
+  .sheet {
+    position: absolute; top: 0; left: 0; width: 8.5in; height: 11in;
+    background: var(--paper); color: #000; transform-origin: top left;
+    box-shadow: 0 2px 4px rgba(0,0,0,.15), 0 12px 30px rgba(0,0,0,.18);
+  }
+
+  /* Sticky note slots on the sheet */
+  .note {
+    position: absolute; width: 3in; height: 3in; overflow: hidden;
+    border: 2px solid #111; background: #fff; padding: 0;
+  }
+  .note .photo { position: absolute; max-width: none; display: none; user-select: none; -webkit-user-drag: none; }
+  .note.filled .photo { display: block; }
+  .note .label {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; font-size: 14px; pointer-events: none; text-align: center;
+  }
+  .note .label .adhesive { font-style: italic; font-size: 13px; position: absolute; top: 14px; }
+  .note .label .slotname { font-weight: 800; font-size: 16px; }
+  .note .label .hint { font-size: 13px; color: #555; }
+  .note.filled .label { display: none; }
+  .note.selected { box-shadow: 0 0 0 4px var(--note); z-index: 2; cursor: pointer; }
+  .sheet .note { cursor: pointer; }
+  .infobar {
+    position: absolute; background: #c0c0c0; display: flex; align-items: center; justify-content: center;
+  }
+  .infobar span {
+    writing-mode: vertical-rl; font-size: 11px; color: #333; white-space: nowrap;
+  }
+
+  /* Side panel */
+  .panel {
+    background: var(--paper); color: #111; border-radius: 10px; padding: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    position: sticky; top: 16px;
+  }
+  @media (prefers-color-scheme: dark) { .panel { background: #263037; color: var(--ink); } }
+  .panel h2 { margin: 0 0 12px; font-size: 1rem; }
+  .editor-empty { color: var(--ink-soft); font-size: .95rem; line-height: 1.5; }
+  .crop {
+    position: relative; width: 288px; height: 288px; margin: 0 auto 14px; overflow: hidden;
+    background: #e9edf0; border: 2px solid var(--ink); touch-action: none; cursor: grab;
+  }
+  .crop.dragging { cursor: grabbing; }
+  .crop img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .crop .empty-msg {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    text-align: center; color: #55646f; padding: 20px; font-size: .95rem;
+  }
+  .row { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+  .row label { font-weight: 600; min-width: 48px; }
+  .row input[type=range] { flex: 1; accent-color: var(--accent); min-height: 32px; }
+  .stack { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .stack .pair { display: flex; gap: 8px; }
+  .stack .pair .btn { flex: 1; }
+  .tip { font-size: .85rem; color: var(--ink-soft); margin: 8px 0 0; line-height: 1.45; }
+
+  /* Mobile slot list (hidden on desktop) */
+  .slotlist { display: none; }
+  .mobile-only { display: none; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--desk);
+    padding: 10px 16px; border-radius: 8px; font-size: .9rem; max-width: 90vw; z-index: 100; display: none;
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 860px) {
+    .layout { display: block; padding: 14px; }
+    .stage { display: none; }
+    header.top .desktop-actions { display: none; }
+    .mobile-only { display: block; }
+    .slotlist { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+    .slotrow {
+      display: flex; align-items: center; gap: 12px; background: var(--paper); color: #111;
+      border: 2px solid var(--ink); border-radius: 8px; padding: 8px 12px; min-height: 64px; width: 100%; text-align: left;
+    }
+    @media (prefers-color-scheme: dark) { .slotrow { background: #263037; color: var(--ink); } }
+    .slotrow .name { font-weight: 700; flex: 1; }
+    .slotrow .state { color: var(--ink-soft); font-size: .9rem; }
+    .slotrow .thumb { width: 44px; height: 44px; border: 1.5px solid var(--line); background: #e9edf0 center/cover no-repeat; }
+    .mobile-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+
+    /* editor becomes full-screen overlay */
+    .panel {
+      display: none; position: fixed; inset: 0; z-index: 40; border-radius: 0; overflow-y: auto;
+      padding: calc(18px + env(safe-area-inset-top, 0px)) 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+    body.editing .panel { display: block; }
+    .crop { width: min(288px, 80vw); height: min(288px, 80vw); }
+
+    /* review overlay */
+    body.reviewing .stage {
+      display: flex; position: fixed; inset: 0; z-index: 30; background: var(--desk); overflow: auto;
+      padding: calc(64px + env(safe-area-inset-top, 0px)) 12px calc(84px + env(safe-area-inset-bottom, 0px));
+    }
+    .reviewbar {
+      display: none; position: fixed; left: 0; right: 0; z-index: 35; gap: 10px; padding: 10px 14px; background: var(--desk);
+    }
+    body.reviewing .reviewbar { display: flex; }
+    .reviewbar.t { top: 0; padding-top: calc(10px + env(safe-area-inset-top, 0px)); justify-content: space-between; align-items: center; }
+    .reviewbar.b { bottom: 0; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+    .reviewbar.b .btn { flex: 1; }
+  }
+  .reviewbar { display: none; }
+  .file-input { display: none; }
+
+  /* ---------- Print ---------- */
+  @page { size: letter; margin: 0; }
+  @media print {
+    html, body { background: #fff !important; min-height: 0; padding: 0 !important; }
+    header.top, .panel, .slotlist, .mobile-actions, .reviewbar, .toast, .mobile-only { display: none !important; }
+    .layout { display: block !important; padding: 0 !important; margin: 0 !important; }
+    .stage { display: block !important; position: static !important; padding: 0 !important; overflow: visible !important; background: none !important; }
+    .sheet-wrap { width: 8.5in !important; height: 11in !important; }
+    .sheet { box-shadow: none !important; transform: none !important; }
+    .note.selected { box-shadow: none !important; }
+    .note .label .hint { display: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* Sheet print: photos only, no outlines/labels/info bar */
+    body.print-sheet .note { border-color: transparent !important; background: transparent !important; }
+    body.print-sheet .note .label, body.print-sheet .infobar { display: none !important; }
+
+    /* Template print: outlines and labels only, no photos */
+    body.print-template .note .photo { display: none !important; }
+    body.print-template .note .label { display: flex !important; }
+    body.print-template .note { background: #fff !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>StickyPrint</h1>
+  <div class="actions desktop-actions">
+    <button class="btn" id="btnTemplate">Print template</button>
+    <button class="btn primary" id="btnPrint">Print sheet</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage">
+    <div class="sheet-wrap" id="sheetWrap">
+      <div class="sheet" id="sheet"></div>
+    </div>
+  </section>
+
+  <aside class="panel" id="panel" aria-label="Slot editor">
+    <h2 id="panelTitle">Select a slot</h2>
+    <div id="panelBody"></div>
+  </aside>
+
+  <!-- Mobile home -->
+  <section class="mobile-only" id="mobileHome">
+    <button class="btn" id="mBtnTemplate" style="width:100%">Print template</button>
+    <div class="slotlist" id="slotList"></div>
+    <div class="mobile-actions">
+      <button class="btn primary" id="mBtnReview">Review and print</button>
+    </div>
+  </section>
+</main>
+
+<div class="reviewbar t"><strong>Review</strong><button class="btn" id="rvBack">Back</button></div>
+<div class="reviewbar b"><button class="btn primary" id="rvPrint">Print sheet</button></div>
+
+<input type="file" accept="image/*" class="file-input" id="fileInput">
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Config (extend here for other page / note sizes later) ----------
+  const PAGE = { w: 8.5, h: 11 };            // inches (Letter)
+  const NOTE = 3;                             // inches (3 x 3 sticky note)
+  const COLS = 2, ROWS = 3, GAP = 0.25;       // inches
+  const BAR_W = 0.5, BAR_MARGIN = 0.5;        // gray info bar
+  const LEFT = 0.5;
+  const STORE_KEY = 'stickyprint.v1';
+  const MAX_DIM = 1200;                       // downscale uploads to keep local storage small
+  const MAX_ZOOM = 4;
+  const PX = 96;                              // CSS px per inch
+
+  // Slot model: { type:'image', src, scale, ox, oy, frame:null, filter:null }
+  // ox/oy are pan offsets as a fraction of the note size, so they hold at any display size.
+  // Future: type:'text' with text/font/size/align fields.
+  let slots = Array(COLS * ROWS).fill(null);
+  let selected = null;
+
+  const $ = id => document.getElementById(id);
+  const sheet = $('sheet'), wrap = $('sheetWrap'), stage = $('stage');
+  const fileInput = $('fileInput'), toastEl = $('toast');
+
+  // ---------- Storage ----------
+  function load() {
+    try {
+      const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (data && Array.isArray(data.slots)) slots = data.slots.slice(0, 6).concat(Array(6).fill(null)).slice(0, 6);
+    } catch (e) { /* start fresh */ }
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ slots })); }
+    catch (e) { toast('Browser storage is full. Clear a slot, or use a smaller photo.'); }
+  }
+  let toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.style.display = 'block';
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.style.display = 'none', 4000);
+  }
+
+  // ---------- Layout ----------
+  const gridH = ROWS * NOTE + (ROWS - 1) * GAP;
+  const TOP = (PAGE.h - gridH) / 2;
+  const noteEls = [];
+  function slotPos(i) {
+    const c = i % COLS, r = Math.floor(i / COLS);
+    return { x: LEFT + c * (NOTE + GAP), y: TOP + r * (NOTE + GAP) };
+  }
+  function buildSheet() {
+    sheet.innerHTML = '';
+    for (let i = 0; i < COLS * ROWS; i++) {
+      const p = slotPos(i);
+      const el = document.createElement('div');
+      el.className = 'note'; el.tabIndex = 0; el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', 'Edit slot ' + (i + 1));
+      el.style.left = p.x + 'in'; el.style.top = p.y + 'in';
+      el.innerHTML =
+        '<img class="photo" alt="" draggable="false">' +
+        '<div class="label"><span class="adhesive">Adhesive here</span>' +
+        '<span class="slotname">Slot ' + (i + 1) + '</span>' +
+        '<span class="hint">Click to add a photo</span></div>';
+      el.addEventListener('click', () => openSlot(i));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSlot(i); } });
+      sheet.appendChild(el); noteEls.push(el);
+    }
+    const bar = document.createElement('div');
+    bar.className = 'infobar';
+    bar.style.left = (PAGE.w - BAR_MARGIN - BAR_W) + 'in';
+    bar.style.top = TOP + 'in'; bar.style.width = BAR_W + 'in'; bar.style.height = gridH + 'in';
+    bar.innerHTML = '<span>StickyPrint: print this template, stick notes in the boxes, feed the sheet back in the same way, then print your photos.</span>';
+    sheet.appendChild(bar);
+  }
+
+  function fitSheet() {
+    const availW = stage.clientWidth || (window.innerWidth - 24);
+    const isMobile = window.matchMedia('(max-width: 860px)').matches;
+    const availH = isMobile ? Infinity : window.innerHeight - 110;
+    const s = Math.min(1, availW / (PAGE.w * PX), availH / (PAGE.h * PX));
+    wrap.style.width = PAGE.w * PX * s + 'px';
+    wrap.style.height = PAGE.h * PX * s + 'px';
+    sheet.style.transform = 'scale(' + s + ')';
+  }
+
+  // ---------- Image placement ----------
+  // Positions an <img> inside a square container so it covers it, honoring scale and pan.
+  function placeImage(img, S, slot) {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (!w || !h) return;
+    const base = Math.max(S / w, S / h);
+    const dw = w * base * slot.scale, dh = h * base * slot.scale;
+    const maxX = (dw - S) / 2, maxY = (dh - S) / 2;
+    slot.ox = clamp(slot.ox, -maxX / S, maxX / S);
+    slot.oy = clamp(slot.oy, -maxY / S, maxY / S);
+    img.style.width = dw + 'px'; img.style.height = dh + 'px';
+    img.style.left = ((S - dw) / 2 + slot.ox * S) + 'px';
+    img.style.top = ((S - dh) / 2 + slot.oy * S) + 'px';
+  }
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  function renderNote(i) {
+    const el = noteEls[i], slot = slots[i];
+    const img = el.querySelector('.photo');
+    el.classList.toggle('filled', !!slot);
+    el.classList.toggle('selected', selected === i);
+    if (!slot) { img.removeAttribute('src'); return; }
+    const go = () => placeImage(img, el.clientWidth, slot);
+    if (img.getAttribute('src') !== slot.src) { img.onload = go; img.src = slot.src; } else go();
+  }
+  function renderAll() { for (let i = 0; i < slots.length; i++) renderNote(i); renderList(); }
+
+  // ---------- Mobile slot list ----------
+  function renderList() {
+    const list = $('slotList'); list.innerHTML = '';
+    slots.forEach((slot, i) => {
+      const b = document.createElement('button');
+      b.className = 'slotrow';
+      b.innerHTML = '<span class="thumb"></span><span class="name">Slot ' + (i + 1) + '</span><span class="state">' + (slot ? 'Edit' : 'Add photo') + '</span>';
+      if (slot) b.querySelector('.thumb').style.backgroundImage = 'url(' + slot.src + ')';
+      b.addEventListener('click', () => openSlot(i));
+      list.appendChild(b);
+    });
+  }
+
+  // ---------- Editor panel ----------
+  const panelTitle = $('panelTitle'), panelBody = $('panelBody');
+  function openSlot(i) {
+    selected = i;
+    document.body.classList.add('editing');
+    renderPanel(); renderAll();
+  }
+  function closeEditor() {
+    selected = null;
+    document.body.classList.remove('editing');
+    renderPanel(); renderAll();
+  }
+
+  function renderPanel() {
+    if (selected === null) {
+      panelTitle.textContent = 'Select a slot';
+      panelBody.innerHTML = '<p class="editor-empty">Click a square on the sheet to add a photo. Everything you see on the sheet is what will print.</p>';
+      return;
+    }
+    const slot = slots[selected];
+    panelTitle.textContent = 'Slot ' + (selected + 1);
+    panelBody.innerHTML =
+      '<div class="crop" id="crop">' +
+        (slot ? '<img id="cropImg" alt="Photo preview" draggable="false">' : '<div class="empty-msg">No photo yet</div>') +
+      '</div>' +
+      (slot ? (
+        '<div class="row"><label for="zoom">Zoom</label><input type="range" id="zoom" min="1" max="' + MAX_ZOOM + '" step="0.01" value="' + slot.scale + '"></div>' +
+        '<p class="tip">Drag the photo to reposition it. Scroll or pinch to zoom.</p>'
+      ) : '') +
+      '<div class="stack">' +
+        '<button class="btn primary" id="btnChoose">' + (slot ? 'Replace photo' : 'Choose photo') + '</button>' +
+        (slot ? '<button class="btn danger" id="btnClear">Clear this slot</button>' : '') +
+        '<button class="btn" id="btnDone">Done</button>' +
+      '</div>';
+
+    $('btnChoose').onclick = () => { fileInput.value = ''; fileInput.click(); };
+    $('btnDone').onclick = closeEditor;
+    if (slot) {
+      $('btnClear').onclick = () => { slots[selected] = null; save(); renderPanel(); renderAll(); };
+      const crop = $('crop'), img = $('cropImg'), zoom = $('zoom');
+      const S = () => crop.clientWidth;
+      const place = () => { placeImage(img, S(), slot); renderNote(selected); };
+      img.onload = place; img.src = slot.src;
+      zoom.oninput = () => { slot.scale = parseFloat(zoom.value); place(); };
+      zoom.onchange = save;
+      attachGestures(crop, slot, place, zoom);
+    }
+  }
+
+  function attachGestures(crop, slot, place, zoom) {
+    const pts = new Map(); let lastDist = 0;
+    crop.addEventListener('pointerdown', e => {
+      crop.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      crop.classList.add('dragging'); lastDist = 0;
+    });
+    crop.addEventListener('pointermove', e => {
+      if (!pts.has(e.pointerId)) return;
+      const prev = pts.get(e.pointerId), cur = { x: e.clientX, y: e.clientY };
+      pts.set(e.pointerId, cur);
+      const S = crop.clientWidth;
+      if (pts.size === 1) {
+        slot.ox += (cur.x - prev.x) / S; slot.oy += (cur.y - prev.y) / S; place();
+      } else if (pts.size === 2) {
+        const [a, b] = [...pts.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (lastDist) { slot.scale = clamp(slot.scale * d / lastDist, 1, MAX_ZOOM); zoom.value = slot.scale; place(); }
+        lastDist = d;
+      }
+    });
+    const end = e => {
+      pts.delete(e.pointerId); lastDist = 0;
+      if (!pts.size) { crop.classList.remove('dragging'); save(); }
+    };
+    crop.addEventListener('pointerup', end); crop.addEventListener('pointercancel', end);
+    crop.addEventListener('wheel', e => {
+      e.preventDefault();
+      slot.scale = clamp(slot.scale * (e.deltaY < 0 ? 1.06 : 1 / 1.06), 1, MAX_ZOOM);
+      zoom.value = slot.scale; place(); save();
+    }, { passive: false });
+  }
+
+  // ---------- Upload ----------
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file || selected === null) return;
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, MAX_DIM / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      slots[selected] = { type: 'image', src: c.toDataURL('image/jpeg', 0.88), scale: 1, ox: 0, oy: 0, frame: null, filter: null };
+      save(); renderPanel(); renderAll();
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); toast('That file could not be read as an image.'); };
+    im.src = url;
+  });
+
+  // ---------- Printing ----------
+  function printMode(mode) {
+    document.body.classList.add('print-' + mode);
+    const cleanup = () => document.body.classList.remove('print-' + mode);
+    window.addEventListener('afterprint', cleanup, { once: true });
+    setTimeout(cleanup, 4000);
+    // make sure photos are laid out at full size before the print snapshot
+    renderAll();
+    requestAnimationFrame(() => window.print());
+  }
+  $('btnTemplate').onclick = $('mBtnTemplate').onclick = () => printMode('template');
+  $('btnPrint').onclick = $('rvPrint').onclick = () => printMode('sheet');
+
+  // Mobile review
+  $('mBtnReview').onclick = () => { document.body.classList.add('reviewing'); fitSheet(); renderAll(); };
+  $('rvBack').onclick = () => document.body.classList.remove('reviewing');
+
+  // ---------- Init ----------
+  load(); buildSheet(); renderPanel();
+  window.addEventListener('resize', () => { fitSheet(); renderAll(); });
+  fitSheet(); renderAll();
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && selected !== null) closeEditor(); });
+})();
+</script>
+</body>
+</html>
