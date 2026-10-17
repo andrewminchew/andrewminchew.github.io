@@ -205,7 +205,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.2</h1>
+  <h1>StickyPrint v1.3</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -493,8 +493,8 @@
   // ---------- PDF (phones/tablets: avoids browser-added URL/date footers) ----------
   const loadImg = src => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
 
-  async function renderCanvas(mode) {
-    const DPI = 200, k = DPI / PX;
+  async function renderCanvas(mode, DPI = 200) {
+    const  k = DPI / PX;
     const c = document.createElement('canvas');
     c.width = Math.round(PAGE.w * DPI); c.height = Math.round(PAGE.h * DPI);
     const ctx = c.getContext('2d');
@@ -532,27 +532,67 @@
     return c;
   }
 
-  // Minimal single-page PDF wrapping one full-page JPEG
-  async function pdfFromCanvas(canvas) {
-    const jpg = new Uint8Array(await (await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92))).arrayBuffer());
+  // Vector PDF: outlines, text and original photo bytes, no big canvas (iOS can silently blank large canvases)
+  async function buildPdf(mode) {
+    const PW = PAGE.w * 72, PH = PAGE.h * 72, f2 = v => v.toFixed(2);
+    const inset = 2 / PX;
+    const measure = (txt, font, size) => {
+      try { const x = document.createElement('canvas').getContext('2d'); x.font = font + ' 100px Helvetica, Arial, sans-serif'; return x.measureText(txt).width * size / 100; }
+      catch (e) { return txt.length * size * 0.5; }
+    };
+    const imgs = []; let c = '';
+    if (mode === 'template') {
+      const lw = 1.5;
+      for (let i = 0; i < slots.length; i++) {
+        const p = slotPos(i), cx = (p.x + NOTE / 2) * 72, top = PH - p.y * 72;
+        c += '0 G ' + lw + ' w ' + f2(p.x * 72 + lw / 2) + ' ' + f2(PH - (p.y + NOTE) * 72 + lw / 2) + ' ' + f2(NOTE * 72 - lw) + ' ' + f2(NOTE * 72 - lw) + ' re S\n';
+        const t1 = 'Adhesive here', t2 = 'Slot ' + (i + 1);
+        c += '0 g BT /F2 9.75 Tf ' + f2(cx - measure(t1, 'italic', 9.75) / 2) + ' ' + f2(top - 22) + ' Td (' + t1 + ') Tj ET\n';
+        c += '0 g BT /F3 12 Tf ' + f2(cx - measure(t2, 'bold', 12) / 2) + ' ' + f2(top - NOTE * 36 - 4) + ' Td (' + t2 + ') Tj ET\n';
+      }
+      const bx = (PAGE.w - BAR_MARGIN - BAR_W) * 72, bw = BAR_W * 72, bh = gridH * 72, by = PH - (TOP + gridH) * 72;
+      c += '0.753 g ' + f2(bx) + ' ' + f2(by) + ' ' + f2(bw) + ' ' + f2(bh) + ' re f\n';
+      const msg = 'StickyPrint: print this template, stick notes in the boxes, feed the sheet back in the same way, then print your photos.';
+      const sz = 8.25, w = measure(msg, '', sz);
+      c += '0.2 g BT /F1 ' + sz + ' Tf 0 -1 1 0 ' + f2(bx + bw / 2 - sz * 0.35) + ' ' + f2(by + bh / 2 + w / 2) + ' Tm (' + msg + ') Tj ET\n';
+    } else {
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i]; if (!slot) continue;
+        const im = await loadImg(slot.src), p = slotPos(i);
+        const S = NOTE - 2 * inset, ix = p.x + inset, iy = p.y + inset;
+        const base = Math.max(S / im.naturalWidth, S / im.naturalHeight);
+        const dw = im.naturalWidth * base * slot.scale, dh = im.naturalHeight * base * slot.scale;
+        const left = ix + (S - dw) / 2 + slot.ox * S, topY = iy + (S - dh) / 2 + slot.oy * S;
+        const bin = atob(slot.src.split(',')[1]), bytes = new Uint8Array(bin.length);
+        for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+        imgs.push({ bytes, w: im.naturalWidth, h: im.naturalHeight });
+        c += 'q ' + f2(ix * 72) + ' ' + f2(PH - (iy + S) * 72) + ' ' + f2(S * 72) + ' ' + f2(S * 72) + ' re W n ' +
+             f2(dw * 72) + ' 0 0 ' + f2(dh * 72) + ' ' + f2(left * 72) + ' ' + f2(PH - (topY + dh) * 72) + ' cm /Im' + (imgs.length - 1) + ' Do Q\n';
+      }
+    }
     const enc = new TextEncoder(), parts = [], offsets = []; let len = 0;
     const push = d => { const b = typeof d === 'string' ? enc.encode(d) : d; parts.push(b); len += b.length; };
-    const W = PAGE.w * 72, H = PAGE.h * 72;
-    const content = 'q ' + W + ' 0 0 ' + H + ' 0 0 cm /Im0 Do Q';
-    push('%PDF-1.4\n');
     const obj = (n, body) => { offsets[n] = len; push(n + ' 0 obj\n' + body + '\nendobj\n'); };
+    const firstImg = 8, total = firstImg + imgs.length;
+    push('%PDF-1.4\n');
     obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
     obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
-    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Contents 4 0 R /Resources << /XObject << /Im0 5 0 R >> >> >>');
-    obj(4, '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
-    offsets[5] = len;
-    push('5 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + canvas.width + ' /Height ' + canvas.height +
-         ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n');
-    push(jpg); push('\nendstream\nendobj\n');
+    const xo = imgs.map((_, k) => '/Im' + k + ' ' + (firstImg + k) + ' 0 R').join(' ');
+    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> /XObject << ' + xo + ' >> >> >>');
+    obj(4, '<< /Length ' + c.length + ' >>\nstream\n' + c + 'endstream');
+    obj(5, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+    obj(6, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>');
+    obj(7, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+    imgs.forEach((im, k) => {
+      offsets[firstImg + k] = len;
+      push((firstImg + k) + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h +
+           ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.bytes.length + ' >>\nstream\n');
+      push(im.bytes); push('\nendstream\nendobj\n');
+    });
     const xref = len;
-    let x = 'xref\n0 6\n0000000000 65535 f \n';
-    for (let n = 1; n <= 5; n++) x += String(offsets[n]).padStart(10, '0') + ' 00000 n \n';
-    push(x + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF');
+    let x = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
+    for (let n = 1; n < total; n++) x += String(offsets[n]).padStart(10, '0') + ' 00000 n \n';
+    push(x + 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF');
     return new Blob(parts, { type: 'application/pdf' });
   }
 
@@ -560,11 +600,8 @@
   async function makePdf(mode) {
     toast('Preparing PDF…');
     try {
-      const canvas = await renderCanvas(mode);
-      const pv = document.createElement('canvas'); pv.width = 300; pv.height = Math.round(300 * canvas.height / canvas.width);
-      pv.getContext('2d').drawImage(canvas, 0, 0, pv.width, pv.height);
-      $('dlgPreview').src = pv.toDataURL('image/jpeg', 0.7);
-      const blob = await pdfFromCanvas(canvas);
+      $('dlgPreview').src = (await renderCanvas(mode, 70)).toDataURL('image/png');
+      const blob = await buildPdf(mode);
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       pdfUrl = URL.createObjectURL(blob);
       const name = mode === 'template' ? 'stickyprint-template.pdf' : 'stickyprint-sheet.pdf';
