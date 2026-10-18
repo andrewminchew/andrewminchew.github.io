@@ -205,7 +205,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.3</h1>
+  <h1>StickyPrint v1.4</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -241,7 +241,7 @@
 <div class="dlg-back" id="dlgBack">
   <div class="dlg" role="dialog" aria-labelledby="dlgTitle">
     <h2 id="dlgTitle">Your PDF is ready</h2>
-    <img id="dlgPreview" alt="Preview of the page" style="display:block;margin:0 auto 12px;width:150px;border:1px solid var(--line);background:#fff">
+    <img id="dlgPreview" alt="Preview of the page" style="display:block;margin:0 auto 12px;width:220px;max-width:100%;border:1px solid var(--line);background:#fff">
     <p>Phone browsers add a URL, date, and page number to printed web pages. A PDF prints cleanly: open it, then choose Print from the PDF viewer or share sheet.</p>
     <div class="stack">
       <a class="btn primary" id="dlgOpen" target="_blank" rel="noopener">Open PDF</a>
@@ -503,7 +503,7 @@
     for (let i = 0; i < slots.length; i++) {
       const p = slotPos(i), x = p.x * DPI, y = p.y * DPI, full = NOTE * DPI;
       if (mode === 'template') {
-        ctx.strokeStyle = '#111'; ctx.lineWidth = 2 * k;
+        ctx.strokeStyle = '#111'; ctx.lineWidth = Math.max(2 * k, DPI < 150 ? 6 : 0); // thicker in the small preview so it stays visible
         ctx.strokeRect(x + k, y + k, full - 2 * k, full - 2 * k);
         ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.font = 'italic ' + 13 * k + 'px ' + 'Helvetica, Arial, sans-serif';
@@ -600,7 +600,7 @@
   async function makePdf(mode) {
     toast('Preparing PDF…');
     try {
-      $('dlgPreview').src = (await renderCanvas(mode, 70)).toDataURL('image/png');
+      $('dlgPreview').src = (await renderCanvas(mode, 100)).toDataURL('image/png');
       const blob = await buildPdf(mode);
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       pdfUrl = URL.createObjectURL(blob);
