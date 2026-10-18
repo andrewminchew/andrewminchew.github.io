@@ -205,7 +205,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.4</h1>
+  <h1>StickyPrint v1.5</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -243,6 +243,7 @@
     <h2 id="dlgTitle">Your PDF is ready</h2>
     <img id="dlgPreview" alt="Preview of the page" style="display:block;margin:0 auto 12px;width:220px;max-width:100%;border:1px solid var(--line);background:#fff">
     <p>Phone browsers add a URL, date, and page number to printed web pages. A PDF prints cleanly: open it, then choose Print from the PDF viewer or share sheet.</p>
+    <pre id="dlgDebug" style="font-size:11px;white-space:pre-wrap;margin:0 0 12px;color:var(--ink-soft)"></pre>
     <div class="stack">
       <a class="btn primary" id="dlgOpen" target="_blank" rel="noopener">Open PDF</a>
       <button class="btn" id="dlgShare">Share or print…</button>
@@ -511,7 +512,8 @@
         ctx.font = 'bold ' + 16 * k + 'px Helvetica, Arial, sans-serif';
         ctx.fillText('Slot ' + (i + 1), x + full / 2, y + full / 2);
       } else if (slots[i]) {
-        const slot = slots[i], im = await loadImg(slot.src);
+        const slot0 = slots[i], im = await loadImg(slot0.src);
+        const slot = { scale: Math.max(1, isFinite(slot0.scale) ? slot0.scale : 1), ox: isFinite(slot0.ox) ? slot0.ox : 0, oy: isFinite(slot0.oy) ? slot0.oy : 0 };
         const S = (NOTE - 2 * inset) * DPI, ix = x + inset * DPI, iy = y + inset * DPI;
         const base = Math.max(S / im.naturalWidth, S / im.naturalHeight);
         const dw = im.naturalWidth * base * slot.scale, dh = im.naturalHeight * base * slot.scale;
@@ -533,6 +535,24 @@
   }
 
   // Vector PDF: outlines, text and original photo bytes, no big canvas (iOS can silently blank large canvases)
+  let lastDebug = '';
+  function dataUrlBytes(src) {
+    const bin = atob(src.slice(src.indexOf(',') + 1)), b = new Uint8Array(bin.length);
+    for (let j = 0; j < bin.length; j++) b[j] = bin.charCodeAt(j);
+    return b;
+  }
+  function jpegInfo(b) {
+    if (b[0] !== 0xFF || b[1] !== 0xD8) return null;
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xFF) { i++; continue; }
+      const m = b[i + 1];
+      if (m === 0xFF) { i++; continue; }
+      if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) return { h: (b[i + 5] << 8) | b[i + 6], w: (b[i + 7] << 8) | b[i + 8], n: b[i + 9] };
+      i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+    }
+    return null;
+  }
   async function buildPdf(mode) {
     const PW = PAGE.w * 72, PH = PAGE.h * 72, f2 = v => v.toFixed(2);
     const inset = 2 / PX;
@@ -540,7 +560,7 @@
       try { const x = document.createElement('canvas').getContext('2d'); x.font = font + ' 100px Helvetica, Arial, sans-serif'; return x.measureText(txt).width * size / 100; }
       catch (e) { return txt.length * size * 0.5; }
     };
-    const imgs = []; let c = '';
+    const imgs = [], debug = []; let c = '';
     if (mode === 'template') {
       const lw = 1.5;
       for (let i = 0; i < slots.length; i++) {
@@ -558,14 +578,23 @@
     } else {
       for (let i = 0; i < slots.length; i++) {
         const slot = slots[i]; if (!slot) continue;
-        const im = await loadImg(slot.src), p = slotPos(i);
+        const p = slotPos(i);
+        const fin = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
+        const sc = Math.max(1, fin(slot.scale, 1)), ox = fin(slot.ox, 0), oy = fin(slot.oy, 0);
+        let bytes = dataUrlBytes(slot.src), info = jpegInfo(bytes);
+        if (!info || (info.n !== 1 && info.n !== 3)) {            // not a plain JPEG: re-encode through a canvas
+          const im0 = await loadImg(slot.src), cv = document.createElement('canvas');
+          cv.width = im0.naturalWidth; cv.height = im0.naturalHeight;
+          const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im0, 0, 0);
+          bytes = dataUrlBytes(cv.toDataURL('image/jpeg', 0.9)); info = jpegInfo(bytes);
+        }
+        if (!info) { debug.push('slot ' + (i + 1) + ': could not read photo data'); continue; }
         const S = NOTE - 2 * inset, ix = p.x + inset, iy = p.y + inset;
-        const base = Math.max(S / im.naturalWidth, S / im.naturalHeight);
-        const dw = im.naturalWidth * base * slot.scale, dh = im.naturalHeight * base * slot.scale;
-        const left = ix + (S - dw) / 2 + slot.ox * S, topY = iy + (S - dh) / 2 + slot.oy * S;
-        const bin = atob(slot.src.split(',')[1]), bytes = new Uint8Array(bin.length);
-        for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
-        imgs.push({ bytes, w: im.naturalWidth, h: im.naturalHeight });
+        const base = Math.max(S / info.w, S / info.h);
+        const dw = info.w * base * sc, dh = info.h * base * sc;
+        const left = ix + (S - dw) / 2 + ox * S, topY = iy + (S - dh) / 2 + oy * S;
+        debug.push('slot ' + (i + 1) + ': ' + info.w + 'x' + info.h + ', ' + Math.round(bytes.length / 1024) + 'KB, zoom ' + sc.toFixed(2) + ', pan ' + ox.toFixed(2) + '/' + oy.toFixed(2));
+        imgs.push({ bytes, w: info.w, h: info.h, cs: info.n === 1 ? 'DeviceGray' : 'DeviceRGB' });
         c += 'q ' + f2(ix * 72) + ' ' + f2(PH - (iy + S) * 72) + ' ' + f2(S * 72) + ' ' + f2(S * 72) + ' re W n ' +
              f2(dw * 72) + ' 0 0 ' + f2(dh * 72) + ' ' + f2(left * 72) + ' ' + f2(PH - (topY + dh) * 72) + ' cm /Im' + (imgs.length - 1) + ' Do Q\n';
       }
@@ -586,13 +615,14 @@
     imgs.forEach((im, k) => {
       offsets[firstImg + k] = len;
       push((firstImg + k) + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h +
-           ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.bytes.length + ' >>\nstream\n');
+           ' /ColorSpace /' + im.cs + ' /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.bytes.length + ' >>\nstream\n');
       push(im.bytes); push('\nendstream\nendobj\n');
     });
     const xref = len;
     let x = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
     for (let n = 1; n < total; n++) x += String(offsets[n]).padStart(10, '0') + ' 00000 n \n';
     push(x + 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF');
+    lastDebug = debug.join('\n');
     return new Blob(parts, { type: 'application/pdf' });
   }
 
@@ -606,7 +636,7 @@
       pdfUrl = URL.createObjectURL(blob);
       const name = mode === 'template' ? 'stickyprint-template.pdf' : 'stickyprint-sheet.pdf';
       pdfFile = new File([blob], name, { type: 'application/pdf' });
-      $('dlgOpen').href = pdfUrl;
+      $('dlgOpen').href = pdfUrl; $('dlgDebug').textContent = lastDebug;
       $('dlgShare').style.display = (navigator.canShare && navigator.canShare({ files: [pdfFile] })) ? '' : 'none';
       toastEl.style.display = 'none';
       $('dlgBack').classList.add('open');
