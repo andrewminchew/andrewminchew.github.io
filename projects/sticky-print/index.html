@@ -205,7 +205,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.5</h1>
+  <h1>StickyPrint v1.6</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -283,6 +283,13 @@
     try {
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
       if (data && Array.isArray(data.slots)) slots = data.slots.slice(0, 6).concat(Array(6).fill(null)).slice(0, 6);
+      // repair any slot saved with broken numbers
+      slots.forEach(sl => {
+        if (!sl) return;
+        sl.scale = (typeof sl.scale === 'number' && isFinite(sl.scale) && sl.scale >= 1) ? sl.scale : 1;
+        sl.ox = (typeof sl.ox === 'number' && isFinite(sl.ox)) ? sl.ox : 0;
+        sl.oy = (typeof sl.oy === 'number' && isFinite(sl.oy)) ? sl.oy : 0;
+      });
     } catch (e) { /* start fresh */ }
   }
   function save() {
@@ -342,7 +349,7 @@
   // Positions an <img> inside a square container so it covers it, honoring scale and pan.
   function placeImage(img, S, slot) {
     const w = img.naturalWidth, h = img.naturalHeight;
-    if (!w || !h) return;
+    if (!w || !h || !(S > 0)) return;   // hidden elements report size 0; bail out so we never write NaN into the slot
     const base = Math.max(S / w, S / h);
     const dw = w * base * slot.scale, dh = h * base * slot.scale;
     const maxX = (dw - S) / 2, maxY = (dh - S) / 2;
