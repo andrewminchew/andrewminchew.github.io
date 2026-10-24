@@ -73,7 +73,7 @@
     border: 2px solid #111; background: #fff; padding: 0;
   }
   .note .photo { position: absolute; max-width: none; display: none; user-select: none; -webkit-user-drag: none; }
-  .note.filled .photo { display: block; }
+  .note.is-photo .photo { display: block; }
   .note .label {
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; font-size: 14px; pointer-events: none; text-align: center;
@@ -82,6 +82,21 @@
   .note .label .slotname { font-weight: 800; font-size: 16px; }
   .note .label .hint { font-size: 13px; color: #555; }
   .note.filled .label { display: none; }
+  .text, .tframe .text {
+    position: absolute; left: 10px; top: 10px; width: 264px; margin: 0; display: none;
+    font: 14pt/1.2 "Times New Roman", Times, serif; white-space: pre; color: #000; pointer-events: none; text-align: left;
+  }
+  .note.is-text .text { display: block; }
+  .tframe { position: relative; width: 288px; height: 288px; margin: 0 auto 14px; overflow: hidden; background: #fff; border: 2px solid var(--ink); }
+  .tframe .text { display: block; }
+  .seg { display: flex; margin-bottom: 14px; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; background: transparent; padding: 9px; font-weight: 600; min-height: 44px; }
+  .seg button.on { background: var(--ink); color: var(--desk); }
+  textarea#ttext {
+    width: 100%; min-height: 120px; resize: vertical; font: 1rem/1.4 "Times New Roman", Times, serif;
+    padding: 10px; border: 2px solid var(--ink); border-radius: 6px; background: transparent; color: inherit;
+  }
+  .tip.warn { color: var(--danger); }
   .note.selected { box-shadow: 0 0 0 4px var(--note); z-index: 2; cursor: pointer; }
   .sheet .note { cursor: pointer; }
   .infobar {
@@ -151,7 +166,7 @@
       padding: calc(18px + env(safe-area-inset-top, 0px)) 18px calc(18px + env(safe-area-inset-bottom, 0px));
     }
     body.editing .panel { display: block; }
-    .crop { width: min(288px, 80vw); height: min(288px, 80vw); }
+    .crop, .tframe { width: min(288px, 80vw); height: min(288px, 80vw); }
 
     /* review overlay */
     body.reviewing .stage {
@@ -196,7 +211,7 @@
     body.print-sheet .note .label, body.print-sheet .infobar { display: none !important; }
 
     /* Template print: outlines and labels only, no photos */
-    body.print-template .note .photo { display: none !important; }
+    body.print-template .note .photo, body.print-template .note .text { display: none !important; }
     body.print-template .note .label { display: flex !important; }
     body.print-template .note { background: #fff !important; }
   }
@@ -205,7 +220,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.6</h1>
+  <h1>StickyPrint v1.7</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -285,7 +300,7 @@
       if (data && Array.isArray(data.slots)) slots = data.slots.slice(0, 6).concat(Array(6).fill(null)).slice(0, 6);
       // repair any slot saved with broken numbers
       slots.forEach(sl => {
-        if (!sl) return;
+        if (!sl || sl.type === 'text') return;
         sl.scale = (typeof sl.scale === 'number' && isFinite(sl.scale) && sl.scale >= 1) ? sl.scale : 1;
         sl.ox = (typeof sl.ox === 'number' && isFinite(sl.ox)) ? sl.ox : 0;
         sl.oy = (typeof sl.oy === 'number' && isFinite(sl.oy)) ? sl.oy : 0;
@@ -319,10 +334,10 @@
       el.setAttribute('aria-label', 'Edit slot ' + (i + 1));
       el.style.left = p.x + 'in'; el.style.top = p.y + 'in';
       el.innerHTML =
-        '<img class="photo" alt="" draggable="false">' +
+        '<img class="photo" alt="" draggable="false"><div class="text"></div>' +
         '<div class="label"><span class="adhesive">Adhesive here</span>' +
         '<span class="slotname">Slot ' + (i + 1) + '</span>' +
-        '<span class="hint">Click to add a photo</span></div>';
+        '<span class="hint">Click to add a photo or text</span></div>';
       el.addEventListener('click', () => openSlot(i));
       el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSlot(i); } });
       sheet.appendChild(el); noteEls.push(el);
@@ -361,12 +376,48 @@
   }
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
+  // ---------- Text layout (shared by screen, preview and PDF so line breaks always match) ----------
+  const TEXT_PT = 14, TEXT_PAD_IN = 0.125, TEXT_LEAD = 1.2;
+  const TEXT_FONT_PX = TEXT_PT * PX / 72;
+  const TEXT_W_PX = NOTE * PX - 2 * TEXT_PAD_IN * PX;           // wrap width in CSS px
+  const TEXT_FAMILY = '"Times New Roman", Times, serif';
+  let mctx = null;
+  const measurePx = t => {
+    mctx = mctx || document.createElement('canvas').getContext('2d');
+    mctx.font = TEXT_FONT_PX + 'px ' + TEXT_FAMILY;
+    return mctx.measureText(t).width;
+  };
+  function wrapText(text) {
+    const lines = [];
+    String(text || '').split(/\r?\n/).forEach(para => {
+      let cur = '';
+      para.split(' ').forEach(w => {
+        const test = cur ? cur + ' ' + w : w;
+        if (measurePx(test) <= TEXT_W_PX) { cur = test; return; }
+        if (cur) lines.push(cur);
+        if (measurePx(w) <= TEXT_W_PX) { cur = w; return; }
+        let piece = '';                                          // single word wider than the note: break by character
+        for (const ch of w) {
+          if (piece && measurePx(piece + ch) > TEXT_W_PX) { lines.push(piece); piece = ch; } else piece += ch;
+        }
+        cur = piece;
+      });
+      lines.push(cur);
+    });
+    return lines;
+  }
+  const textFits = lines => lines.length * TEXT_FONT_PX * TEXT_LEAD <= NOTE * PX - 2 * TEXT_PAD_IN * PX + 1;
+
   function renderNote(i) {
     const el = noteEls[i], slot = slots[i];
-    const img = el.querySelector('.photo');
+    const img = el.querySelector('.photo'), txt = el.querySelector('.text');
     el.classList.toggle('filled', !!slot);
+    el.classList.toggle('is-photo', !!slot && slot.type !== 'text');
+    el.classList.toggle('is-text', !!slot && slot.type === 'text');
     el.classList.toggle('selected', selected === i);
-    if (!slot) { img.removeAttribute('src'); return; }
+    if (!slot) { img.removeAttribute('src'); txt.textContent = ''; return; }
+    if (slot.type === 'text') { img.removeAttribute('src'); txt.textContent = wrapText(slot.text).join('\n'); return; }
+    txt.textContent = '';
     const go = () => placeImage(img, el.clientWidth, slot);
     if (img.getAttribute('src') !== slot.src) { img.onload = go; img.src = slot.src; } else go();
   }
@@ -378,8 +429,10 @@
     slots.forEach((slot, i) => {
       const b = document.createElement('button');
       b.className = 'slotrow';
-      b.innerHTML = '<span class="thumb"></span><span class="name">Slot ' + (i + 1) + '</span><span class="state">' + (slot ? 'Edit' : 'Add photo') + '</span>';
-      if (slot) b.querySelector('.thumb').style.backgroundImage = 'url(' + slot.src + ')';
+      b.innerHTML = '<span class="thumb"></span><span class="name">Slot ' + (i + 1) + '</span><span class="state">' + (slot ? 'Edit' : 'Add photo or text') + '</span>';
+      const th = b.querySelector('.thumb');
+      if (slot && slot.type === 'text') { th.textContent = 'Aa'; th.style.cssText += ';display:flex;align-items:center;justify-content:center;font-family:' + TEXT_FAMILY + ';color:#111'; }
+      else if (slot) th.style.backgroundImage = 'url(' + slot.src + ')';
       b.addEventListener('click', () => openSlot(i));
       list.appendChild(b);
     });
@@ -387,8 +440,10 @@
 
   // ---------- Editor panel ----------
   const panelTitle = $('panelTitle'), panelBody = $('panelBody');
+  let panelMode = 'photo';
   function openSlot(i) {
     selected = i;
+    if (slots[i]) panelMode = slots[i].type === 'text' ? 'text' : 'photo';
     document.body.classList.add('editing');
     renderPanel(); renderAll();
   }
@@ -401,12 +456,56 @@
   function renderPanel() {
     if (selected === null) {
       panelTitle.textContent = 'Select a slot';
-      panelBody.innerHTML = '<p class="editor-empty">Click a square on the sheet to add a photo. Everything you see on the sheet is what will print.</p>';
+      panelBody.innerHTML = '<p class="editor-empty">Click a square on the sheet to add a photo or a text note. Everything you see on the sheet is what will print.</p>';
       return;
     }
-    const slot = slots[selected];
     panelTitle.textContent = 'Slot ' + (selected + 1);
-    panelBody.innerHTML =
+    const seg = '<div class="seg" role="tablist">' +
+      '<button role="tab" data-m="photo" class="' + (panelMode === 'photo' ? 'on' : '') + '">Photo</button>' +
+      '<button role="tab" data-m="text" class="' + (panelMode === 'text' ? 'on' : '') + '">Text</button></div>';
+    if (panelMode === 'text') renderTextPanel(seg); else renderPhotoPanel(seg);
+    panelBody.querySelectorAll('.seg button').forEach(btn => btn.onclick = () => {
+      const m = btn.dataset.m; if (m === panelMode) return;
+      const cur = slots[selected];
+      if (cur) {
+        if (!confirm('Replace this ' + (cur.type === 'text' ? 'text note' : 'photo') + '?')) return;
+        slots[selected] = null; save();
+      }
+      panelMode = m; renderPanel(); renderAll();
+    });
+  }
+
+  function renderTextPanel(seg) {
+    const slot = slots[selected];
+    panelBody.innerHTML = seg +
+      '<div class="tframe"><div class="text" id="tprev"></div></div>' +
+      '<textarea id="ttext" placeholder="Type your note" aria-label="Note text"></textarea>' +
+      '<p class="tip" id="tfit">Times New Roman, 14 pt, aligned top left.</p>' +
+      '<div class="stack">' +
+        '<button class="btn danger" id="btnClear">Clear this slot</button>' +
+        '<button class="btn" id="btnDone">Done</button>' +
+      '</div>';
+    const ta = $('ttext'), prev = $('tprev'), fit = $('tfit');
+    ta.value = slot ? slot.text : '';
+    const update = () => {
+      const lines = wrapText(ta.value);
+      prev.textContent = lines.join('\n');
+      const ok = textFits(lines);
+      fit.textContent = ok ? 'Times New Roman, 14 pt, aligned top left.' : 'This is longer than the note. The extra text will not print.';
+      fit.classList.toggle('warn', !ok);
+    };
+    ta.oninput = () => {
+      slots[selected] = ta.value.trim() === '' ? null : { type: 'text', text: ta.value, frame: null };
+      save(); update(); renderNote(selected); renderList();
+    };
+    $('btnClear').onclick = () => { slots[selected] = null; save(); renderPanel(); renderAll(); };
+    $('btnDone').onclick = closeEditor;
+    update();
+  }
+
+  function renderPhotoPanel(seg) {
+    const slot = slots[selected];
+    panelBody.innerHTML = seg +
       '<div class="crop" id="crop">' +
         (slot ? '<img id="cropImg" alt="Photo preview" draggable="false">' : '<div class="empty-msg">No photo yet</div>') +
       '</div>' +
@@ -518,6 +617,13 @@
         ctx.fillText('Adhesive here', x + full / 2, y + 14 * k + 8 * k);
         ctx.font = 'bold ' + 16 * k + 'px Helvetica, Arial, sans-serif';
         ctx.fillText('Slot ' + (i + 1), x + full / 2, y + full / 2);
+      } else if (slots[i] && slots[i].type === 'text') {
+        const lh = TEXT_PT * TEXT_LEAD * DPI / 72, pad = TEXT_PAD_IN * DPI;
+        ctx.save(); ctx.beginPath(); ctx.rect(x, y, full, full); ctx.clip();
+        ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+        ctx.font = (TEXT_PT * DPI / 72) + 'px ' + TEXT_FAMILY;
+        wrapText(slots[i].text).forEach((ln, n) => ctx.fillText(ln, x + pad, y + pad + lh * n + 0.94 * TEXT_PT * DPI / 72));
+        ctx.restore();
       } else if (slots[i]) {
         const slot0 = slots[i], im = await loadImg(slot0.src);
         const slot = { scale: Math.max(1, isFinite(slot0.scale) ? slot0.scale : 1), ox: isFinite(slot0.ox) ? slot0.ox : 0, oy: isFinite(slot0.oy) ? slot0.oy : 0 };
@@ -543,6 +649,18 @@
 
   // Vector PDF: outlines, text and original photo bytes, no big canvas (iOS can silently blank large canvases)
   let lastDebug = '';
+  // Convert text to WinAnsi bytes (as a binary string) and escape for a PDF string literal
+  const WIN = { '\u20AC': 0x80, '\u2026': 0x85, '\u2018': 0x91, '\u2019': 0x92, '\u201C': 0x93, '\u201D': 0x94, '\u2022': 0x95, '\u2013': 0x96, '\u2014': 0x97, '\u2122': 0x99 };
+  function pdfText(str) {
+    let out = '';
+    for (const ch of str) {
+      const cp = ch.codePointAt(0);
+      let b = WIN[ch] !== undefined ? WIN[ch] : (cp >= 32 && cp < 127) || (cp >= 160 && cp < 256) ? cp : 63;
+      const t = String.fromCharCode(b);
+      out += (t === '(' || t === ')' || t === '\\') ? '\\' + t : t;
+    }
+    return out;
+  }
   function dataUrlBytes(src) {
     const bin = atob(src.slice(src.indexOf(',') + 1)), b = new Uint8Array(bin.length);
     for (let j = 0; j < bin.length; j++) b[j] = bin.charCodeAt(j);
@@ -586,6 +704,16 @@
       for (let i = 0; i < slots.length; i++) {
         const slot = slots[i]; if (!slot) continue;
         const p = slotPos(i);
+        if (slot.type === 'text') {
+          const lines = wrapText(slot.text);
+          const nx = p.x * 72, ny = PH - (p.y + NOTE) * 72, pad = TEXT_PAD_IN * 72, lead = TEXT_PT * TEXT_LEAD;
+          c += 'q ' + f2(nx) + ' ' + f2(ny) + ' ' + f2(NOTE * 72) + ' ' + f2(NOTE * 72) + ' re W n 0 g BT /F4 ' + TEXT_PT + ' Tf ' + f2(lead) + ' TL ' +
+               f2(nx + pad) + ' ' + f2(PH - p.y * 72 - pad - 0.94 * TEXT_PT) + ' Td\n';
+          lines.forEach(ln => { c += '(' + pdfText(ln) + ') Tj T*\n'; });
+          c += 'ET Q\n';
+          debug.push('slot ' + (i + 1) + ': text, ' + lines.length + ' lines');
+          continue;
+        }
         const fin = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
         const sc = Math.max(1, fin(slot.scale, 1)), ox = fin(slot.ox, 0), oy = fin(slot.oy, 0);
         let bytes = dataUrlBytes(slot.src), info = jpegInfo(bytes);
@@ -609,16 +737,18 @@
     const enc = new TextEncoder(), parts = [], offsets = []; let len = 0;
     const push = d => { const b = typeof d === 'string' ? enc.encode(d) : d; parts.push(b); len += b.length; };
     const obj = (n, body) => { offsets[n] = len; push(n + ' 0 obj\n' + body + '\nendobj\n'); };
-    const firstImg = 8, total = firstImg + imgs.length;
+    const firstImg = 9, total = firstImg + imgs.length;
     push('%PDF-1.4\n');
     obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
     obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
     const xo = imgs.map((_, k) => '/Im' + k + ' ' + (firstImg + k) + ' 0 R').join(' ');
-    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> /XObject << ' + xo + ' >> >> >>');
-    obj(4, '<< /Length ' + c.length + ' >>\nstream\n' + c + 'endstream');
+    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> /XObject << ' + xo + ' >> >> >>');
+    const cb = new Uint8Array(c.length); for (let q = 0; q < c.length; q++) cb[q] = c.charCodeAt(q) & 255;
+    offsets[4] = len; push('4 0 obj\n<< /Length ' + cb.length + ' >>\nstream\n'); push(cb); push('endstream\nendobj\n');
     obj(5, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
     obj(6, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>');
     obj(7, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+    obj(8, '<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>');
     imgs.forEach((im, k) => {
       offsets[firstImg + k] = len;
       push((firstImg + k) + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h +
