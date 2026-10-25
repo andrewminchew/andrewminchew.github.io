@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aladin&family=Barrio&family=Bytesized&family=Cherry+Bomb+One&family=Cinzel&family=Fontdiner+Swanky&family=Gravitas+One&family=Jim+Nightshade&family=Lobster&family=Monoton&family=New+Rocker&family=Orbitron&family=Pinyon+Script&family=Roboto&family=Rock+3D&family=Rock+Salt&family=Sue+Ellen+Francisco&display=swap">
 <style>
   :root {
+    --fw: 288px;
     --desk: #dfe4e8;
     --ink: #1d2a33;
     --ink-soft: #55646f;
@@ -61,7 +62,7 @@
   .btn.danger { border-color: var(--danger); color: var(--danger); }
   .btn[disabled] { opacity: .45; cursor: default; }
 
-  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; padding: 20px; align-items: start; }
+  .layout { display: grid; grid-template-columns: 1fr 364px; gap: 24px; padding: 20px; align-items: start; }
   .stage { display: flex; justify-content: center; min-width: 0; }
   .sheet-wrap { position: relative; }
   .sheet {
@@ -86,12 +87,15 @@
   .note .label .hint { font-size: 13px; color: #555; }
   .note.filled .label { display: none; }
   .text, .tframe .text {
-    position: absolute; left: 10px; top: 10px; width: 264px; margin: 0; display: none;
+    position: absolute; left: 10px; top: 10px; width: 264px; height: 264px; margin: 0; display: none; align-content: start;
     font: 14pt/1.2 "Times New Roman", Times, serif; white-space: pre; color: #000; pointer-events: none; text-align: left;
   }
-  .note.is-text .text { display: block; }
-  .tframe { position: relative; width: 288px; height: 288px; margin: 0 auto 14px; overflow: hidden; background: #fff; border: 2px solid var(--ink); }
-  .tframe .text { display: block; }
+  .note.is-text .text { display: grid; }
+  .tframe { position: relative; width: var(--fw); height: var(--fw); margin: 0 auto 14px; overflow: hidden; background: #fff; border: 2px solid var(--ink); }
+  .tframe .text { display: grid; }
+  .alignrow { display: flex; gap: 8px; margin: 10px 0; }
+  .alignrow button { flex: 1; border: 2px solid var(--ink); background: transparent; border-radius: 6px; padding: 9px 4px; min-height: 44px; font-weight: 600; }
+  .alignrow button.on { background: var(--ink); color: var(--desk); }
   .seg { display: flex; margin-bottom: 14px; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; }
   .seg button { flex: 1; border: 0; background: transparent; padding: 9px; font-weight: 600; min-height: 44px; }
   .seg button.on { background: var(--ink); color: var(--desk); }
@@ -132,11 +136,24 @@
   .panel h2 { margin: 0 0 12px; font-size: 1rem; }
   .editor-empty { color: var(--ink-soft); font-size: .95rem; line-height: 1.5; }
   .crop {
-    position: relative; width: 288px; height: 288px; margin: 0 auto 14px; overflow: hidden;
+    position: relative; width: var(--fw); height: var(--fw); margin: 0 auto 14px; overflow: hidden;
     background: #e9edf0; border: 2px solid var(--ink); touch-action: none; cursor: grab;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   }
   .crop.dragging { cursor: grabbing; }
+  .note .content { position: absolute; inset: 0; }
+  .stickywrap { position: relative; width: calc(var(--fw) + 32px); margin: 0 auto 6px; padding: 16px; }
+  .stickywrap .crop, .stickywrap .tframe { margin: 0; }
+  .edge { position: absolute; border: 0; padding: 0; border-radius: 4px; background: var(--line); opacity: .55; cursor: pointer; }
+  .edge:hover { opacity: 1; }
+  .edge::after { content: ''; position: absolute; }
+  .edge.top, .edge.bottom { left: 16px; right: 16px; height: 12px; }
+  .edge.left, .edge.right { top: 16px; bottom: 16px; width: 12px; }
+  .edge.top { top: 1px; } .edge.bottom { bottom: 1px; } .edge.left { left: 1px; } .edge.right { right: 1px; }
+  .edge.top::after, .edge.bottom::after { inset: -8px 0; }
+  .edge.left::after, .edge.right::after { inset: 0 -8px; }
+  .edge.on { opacity: 1; background: repeating-linear-gradient(45deg, var(--note) 0 6px, #c9a920 6px 9px); box-shadow: 0 0 0 1px #8a7410; }
+  .stickycap { text-align: center; margin: 0 0 12px; }
   .crop img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
   .crop .empty-msg {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -182,7 +199,7 @@
       padding: calc(18px + env(safe-area-inset-top, 0px)) 18px calc(18px + env(safe-area-inset-bottom, 0px));
     }
     body.editing .panel { display: block; }
-    .crop, .tframe { width: min(288px, 80vw); height: min(288px, 80vw); }
+    :root { --fw: min(288px, calc(100vw - 68px)); }
 
     /* review overlay */
     body.reviewing .stage {
@@ -236,7 +253,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.8</h1>
+  <h1>StickyPrint v1.9</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -315,6 +332,10 @@
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
       if (data && Array.isArray(data.slots)) slots = data.slots.slice(0, 6).concat(Array(6).fill(null)).slice(0, 6);
       if (typeof data.textFont === 'string') textFont = fontOf(data.textFont);
+      if (typeof data.textSize === 'number' && data.textSize >= 1) textSize = data.textSize;
+      if (['left', 'center', 'right'].includes(data.textAlign)) textAlign = data.textAlign;
+      if (['top', 'middle', 'bottom'].includes(data.textValign)) textValign = data.textValign;
+      if (['top', 'right', 'bottom', 'left'].includes(data.stickyEdge)) stickyEdge = data.stickyEdge;
       // repair any slot saved with broken numbers
       slots.forEach(sl => {
         if (!sl || sl.type === 'text') return;
@@ -325,7 +346,7 @@
     } catch (e) { /* start fresh */ }
   }
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify({ slots, textFont })); }
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ slots, textFont, textSize, textAlign, textValign, stickyEdge })); }
     catch (e) { toast('Browser storage is full. Clear a slot, or use a smaller photo.'); }
   }
   let toastTimer;
@@ -351,7 +372,7 @@
       el.setAttribute('aria-label', 'Edit slot ' + (i + 1));
       el.style.left = p.x + 'in'; el.style.top = p.y + 'in';
       el.innerHTML =
-        '<img class="photo" alt="" draggable="false"><div class="text"></div>' +
+        '<div class="content"><img class="photo" alt="" draggable="false"><div class="text"></div></div>' +
         '<div class="label"><span class="adhesive">Adhesive here</span>' +
         '<span class="slotname">Slot ' + (i + 1) + '</span>' +
         '<span class="hint">Click to add a photo or text</span></div>';
@@ -420,7 +441,7 @@
   const FONT_BY_ID = Object.fromEntries(FONTS.map(f => [f.id, f]));
   const fontOf = id => FONT_BY_ID[id] ? id : 'times';
   const DEFAULT_SAMPLE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
-  let textFont = 'times';                 // font used for new text notes (last one chosen)
+  let textFont = 'times', textSize = TEXT_PT, textAlign = 'left', textValign = 'top', stickyEdge = 'top';                 // font used for new text notes (last one chosen)
   let onFontLoaded = null;
   const fontPromises = {};
   // Web fonts load lazily. Wait for one before measuring or drawing with it, then re-lay-out when it arrives.
@@ -438,49 +459,102 @@
   // ---------- Text layout (shared by screen, preview and PDF so line breaks always match) ----------
   const TEXT_W_PX = NOTE * PX - 2 * TEXT_PAD_IN * PX;           // wrap width in CSS px
   let mctx = null;
-  const useFont = (id, scale) => {
+  const useFont = (id, pt, scale) => {
     mctx = mctx || document.createElement('canvas').getContext('2d');
-    mctx.font = (TEXT_FONT_PX * (scale || 1)) + 'px ' + FONT_BY_ID[fontOf(id)].css;
+    mctx.font = (pt * PX / 72 * (scale || 1)) + 'px ' + FONT_BY_ID[fontOf(id)].css;
     return mctx;
   };
-  const measurePx = (t, id) => useFont(id).measureText(t).width;
+  const measurePx = (t, id, pt) => useFont(id, pt).measureText(t).width;
   // Distance from the top of a line box to its baseline, in CSS px, matching how the browser centres text in a 1.2 line box
-  function baselinePx(id) {
-    const m = useFont(id).measureText('Hg');
-    const asc = m.fontBoundingBoxAscent || TEXT_FONT_PX * 0.89, desc = m.fontBoundingBoxDescent || TEXT_FONT_PX * 0.22;
-    return (TEXT_FONT_PX * TEXT_LEAD - (asc + desc)) / 2 + asc;
+  function baselinePx(id, pt) {
+    const px = pt * PX / 72, m = useFont(id, pt).measureText('Hg');
+    const asc = m.fontBoundingBoxAscent || px * 0.89, desc = m.fontBoundingBoxDescent || px * 0.22;
+    return (px * TEXT_LEAD - (asc + desc)) / 2 + asc;
   }
-  function wrapText(text, fontId) {
+  function wrapText(text, fontId, pt) {
+    pt = pt || TEXT_PT;
     const lines = [];
     String(text || '').split(/\r?\n/).forEach(para => {
       let cur = '';
       para.split(' ').forEach(w => {
         const test = cur ? cur + ' ' + w : w;
-        if (measurePx(test, fontId) <= TEXT_W_PX) { cur = test; return; }
+        if (measurePx(test, fontId, pt) <= TEXT_W_PX) { cur = test; return; }
         if (cur) lines.push(cur);
-        if (measurePx(w, fontId) <= TEXT_W_PX) { cur = w; return; }
+        if (measurePx(w, fontId, pt) <= TEXT_W_PX) { cur = w; return; }
         let piece = '';                                          // single word wider than the note: break by character
         for (const ch of w) {
-          if (piece && measurePx(piece + ch, fontId) > TEXT_W_PX) { lines.push(piece); piece = ch; } else piece += ch;
+          if (piece && measurePx(piece + ch, fontId, pt) > TEXT_W_PX) { lines.push(piece); piece = ch; } else piece += ch;
         }
         cur = piece;
       });
       lines.push(cur);
     });
-    return lines;
+    return lines.map(l => l.replace(/ +$/, ''));
   }
-  const textFits = lines => lines.length * TEXT_FONT_PX * TEXT_LEAD <= NOTE * PX - 2 * TEXT_PAD_IN * PX + 1;
+  const textFits = (lines, pt) => lines.length * pt * PX / 72 * TEXT_LEAD <= NOTE * PX - 2 * TEXT_PAD_IN * PX + 1;
+
+  // Largest size (0.5 pt steps, 1 pt minimum) at which all of the text fits inside the note
+  const MAX_TEXT_PT = 200;
+  let fitCache = new Map();
+  function maxFitPt(text, fontId) {
+    const key = fontOf(fontId) + '|' + text;
+    if (fitCache.has(key)) return fitCache.get(key);
+    let lo = 2, hi = MAX_TEXT_PT * 2;                            // in half-points; lo = 1 pt is the floor
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      if (textFits(wrapText(text, fontId, mid / 2), mid / 2)) lo = mid; else hi = mid - 1;
+    }
+    fitCache.set(key, lo / 2);
+    if (fitCache.size > 200) fitCache = new Map([[key, lo / 2]]);
+    return lo / 2;
+  }
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  // The size actually used: the chosen size, shrunk if needed so everything fits
+  const sizeOf = slot => Math.max(1, Math.min(isNum(slot.size) ? slot.size : TEXT_PT, maxFitPt(slot.text, slot.font)));
+
+  // Which edge of a note's content is the sticky (adhesive) edge. The content is rotated so that edge sits at the physical top of the note.
+  const STICKY_DEG = { top: 0, left: 90, bottom: 180, right: 270 };        // clockwise rotation
+  const stickyOf = slot => (slot && STICKY_DEG[slot.sticky] !== undefined) ? slot.sticky : 'top';
+  const rotDeg = slot => STICKY_DEG[stickyOf(slot)];
+  // PDF: matrices that rotate drawing clockwise by deg about (cx, cy), in points. Empty for no rotation.
+  function pdfRot(cx, cy, deg) {
+    if (!deg) return '';
+    const c = { 90: 0, 180: -1, 270: 0 }[deg], sn = { 90: 1, 180: 0, 270: -1 }[deg], f = v => (v + 0).toFixed(2);
+    return '1 0 0 1 ' + f(cx) + ' ' + f(cy) + ' cm ' + (c + 0) + ' ' + (-sn + 0) + ' ' + (sn + 0) + ' ' + (c + 0) + ' 0 0 cm 1 0 0 1 ' + f(-cx) + ' ' + f(-cy) + ' cm ';
+  }
+  const alignOf = slot => ['left', 'center', 'right'].includes(slot && slot.align) ? slot.align : 'left';
+  const valignOf = slot => ['top', 'middle', 'bottom'].includes(slot && slot.valign) ? slot.valign : 'top';
+
+  // Position of every line inside a note, in CSS px: x = left edge of the text, y = baseline. Shared by canvas and PDF output.
+  function layoutLines(lines, fid, pt, align, valign) {
+    const pad = TEXT_PAD_IN * PX, W = TEXT_W_PX, H = NOTE * PX - 2 * pad;
+    const lh = pt * PX / 72 * TEXT_LEAD, base = baselinePx(fid, pt);
+    const free = H - lines.length * lh;
+    const off = free <= 0 ? 0 : valign === 'middle' ? free / 2 : valign === 'bottom' ? free : 0;
+    return lines.map((t, n) => {
+      const w = (align === 'left' || !t) ? 0 : measurePx(t, fid, pt);
+      return { t, x: pad + (align === 'center' ? (W - w) / 2 : align === 'right' ? W - w : 0), y: pad + off + lh * n + base };
+    });
+  }
   // Draw wrapped lines onto a canvas whose origin is a note's top-left corner; scale = canvas px per CSS px
-  function drawLines(ctx, lines, fontId, scale, x, y) {
-    const pad = TEXT_PAD_IN * PX, lh = TEXT_FONT_PX * TEXT_LEAD, base = baselinePx(fontId);
-    ctx.font = (TEXT_FONT_PX * scale) + 'px ' + FONT_BY_ID[fontOf(fontId)].css;
+  function drawLines(ctx, lines, fontId, scale, x, y, pt, align, valign) {
+    const laid = layoutLines(lines, fontId, pt, align, valign);
+    ctx.font = (pt * PX / 72 * scale) + 'px ' + FONT_BY_ID[fontOf(fontId)].css;
     ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    lines.forEach((ln, n) => ctx.fillText(ln, x + pad * scale, y + (pad + lh * n + base) * scale));
+    laid.forEach(l => ctx.fillText(l.t, x + l.x * scale, y + l.y * scale));
+  }
+  // Apply font, size, alignment and the wrapped text to a DOM element
+  function styleText(el, fid, pt, align, valign, lines) {
+    const free = NOTE * PX - 2 * TEXT_PAD_IN * PX - lines.length * pt * PX / 72 * TEXT_LEAD;
+    el.style.fontFamily = FONT_BY_ID[fid].css; el.style.fontSize = pt + 'pt'; el.style.textAlign = align;
+    el.style.alignContent = free <= 0 ? 'start' : { top: 'start', middle: 'center', bottom: 'end' }[valign];
+    el.textContent = lines.join('\n');
   }
 
   function renderNote(i) {
     const el = noteEls[i], slot = slots[i];
-    const img = el.querySelector('.photo'), txt = el.querySelector('.text');
+    const img = el.querySelector('.photo'), txt = el.querySelector('.text'), content = el.querySelector('.content');
+    content.style.transform = slot && rotDeg(slot) ? 'rotate(' + rotDeg(slot) + 'deg)' : '';
     el.classList.toggle('filled', !!slot);
     el.classList.toggle('is-photo', !!slot && slot.type !== 'text');
     el.classList.toggle('is-text', !!slot && slot.type === 'text');
@@ -490,8 +564,8 @@
       const fid = fontOf(slot.font);
       ensureFont(fid);
       img.removeAttribute('src');
-      txt.style.fontFamily = FONT_BY_ID[fid].css;
-      txt.textContent = wrapText(slot.text, fid).join('\n');
+      const pt = sizeOf({ text: slot.text, font: fid, size: slot.size });
+      styleText(txt, fid, pt, alignOf(slot), valignOf(slot), wrapText(slot.text, fid, pt));
       return;
     }
     txt.textContent = '';
@@ -508,7 +582,7 @@
       b.className = 'slotrow';
       b.innerHTML = '<span class="thumb"></span><span class="name">Slot ' + (i + 1) + '</span><span class="state">' + (slot ? 'Edit' : 'Add photo or text') + '</span>';
       const th = b.querySelector('.thumb');
-      if (slot && slot.type === 'text') { th.textContent = 'Aa'; th.style.cssText += ';display:flex;align-items:center;justify-content:center;font-family:' + TEXT_FAMILY + ';color:#111'; }
+      if (slot && slot.type === 'text') { th.textContent = 'Aa'; th.style.cssText += ';display:flex;align-items:center;justify-content:center;font-family:' + FONT_BY_ID[fontOf(slot.font)].css.replace(/"/g, "'") + ';color:#111'; }
       else if (slot) th.style.backgroundImage = 'url(' + slot.src + ')';
       b.addEventListener('click', () => openSlot(i));
       list.appendChild(b);
@@ -554,37 +628,73 @@
     });
   }
 
+  const stickyHTML = inner => '<div class="stickywrap">' + inner +
+    ['top', 'right', 'bottom', 'left'].map(e => '<button class="edge ' + e + '" data-e="' + e + '" aria-label="Sticky edge: ' + e + '"></button>').join('') +
+    '</div><p class="tip stickycap" id="stickycap"></p>';
+  function wireEdges() {
+    const cur = () => slots[selected] ? stickyOf(slots[selected]) : stickyEdge;
+    const paint = () => {
+      panelBody.querySelectorAll('.edge').forEach(b => { const on = b.dataset.e === cur(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+      $('stickycap').textContent = 'Sticky edge: ' + cur() + '. Tap another edge of the preview to change it.';
+    };
+    panelBody.querySelectorAll('.edge').forEach(b => b.onclick = () => {
+      stickyEdge = b.dataset.e; if (slots[selected]) slots[selected].sticky = stickyEdge;
+      save(); paint(); renderNote(selected);
+    });
+    paint();
+  }
+
   function renderTextPanel(seg) {
     const slot = slots[selected];
     panelBody.innerHTML = seg +
-      '<div class="tframe"><div class="text" id="tprev"></div></div>' +
+      stickyHTML('<div class="tframe"><div class="text" id="tprev"></div></div>') +
       '<textarea id="ttext" placeholder="Type your note" aria-label="Note text"></textarea>' +
+      '<div class="row"><label for="tsize">Size</label><input type="range" id="tsize" min="1" max="72" step="0.5" value="14"><span id="tsizeval" style="min-width:3.2em;text-align:right"></span></div>' +
+      '<div class="alignrow" id="algh" role="group" aria-label="Horizontal alignment"><button data-a="left">Left</button><button data-a="center">Center</button><button data-a="right">Right</button></div>' +
+      '<div class="alignrow" id="algv" role="group" aria-label="Vertical alignment"><button data-a="top">Top</button><button data-a="middle">Middle</button><button data-a="bottom">Bottom</button></div>' +
       '<div class="fontrow"><label>Font</label><button class="btn" id="btnFont"></button></div>' +
       '<p class="tip" id="tfit"></p>' +
       '<div class="stack">' +
         '<button class="btn danger" id="btnClear">Clear this slot</button>' +
         '<button class="btn" id="btnDone">Done</button>' +
       '</div>';
-    const ta = $('ttext'), prev = $('tprev'), fit = $('tfit'), fbtn = $('btnFont');
+    wireEdges();
+    const ta = $('ttext'), prev = $('tprev'), fit = $('tfit'), fbtn = $('btnFont'), tsize = $('tsize'), tsizeval = $('tsizeval');
     ta.value = slot ? slot.text : '';
     const curFont = () => fontOf(slots[selected] ? slots[selected].font : textFont);
     const update = () => {
       const fid = curFont(), f = FONT_BY_ID[fid];
       ensureFont(fid);
-      const lines = wrapText(ta.value, fid);
-      prev.style.fontFamily = f.css;
-      prev.textContent = lines.join('\n');
+      const maxPt = maxFitPt(ta.value, fid);
+      const want = slots[selected] && isNum(slots[selected].size) ? slots[selected].size : textSize;
+      const pt = Math.max(1, Math.min(want, maxPt));
+      const lines = wrapText(ta.value, fid, pt);
+      const al = slots[selected] ? alignOf(slots[selected]) : textAlign, va = slots[selected] ? valignOf(slots[selected]) : textValign;
+      styleText(prev, fid, pt, al, va, lines);
+      const k = prev.parentElement.clientWidth / 284; prev.style.transformOrigin = '0 0'; prev.style.transform = k && Math.abs(k - 1) > 0.001 ? 'scale(' + k + ')' : '';
+      $('algh').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.a === al); b.setAttribute('aria-pressed', b.dataset.a === al); });
+      $('algv').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.a === va); b.setAttribute('aria-pressed', b.dataset.a === va); });
       fbtn.textContent = f.name; fbtn.style.fontFamily = f.css;
-      const ok = textFits(lines);
-      fit.textContent = ok ? f.name + ', 14 pt, aligned top left.' : 'This is longer than the note. The extra text will not print.';
+      tsize.max = maxPt; tsize.value = pt; tsizeval.textContent = pt + ' pt';
+      const ok = textFits(lines, pt);
+      fit.textContent = ok ? f.name + ', ' + pt + ' pt.' + (pt < want ? ' Shrunk to fit; the size returns if you shorten the text.' : '')
+                           : 'This is longer than the note, even at 1 pt. The extra text will not print.';
       fit.classList.toggle('warn', !ok);
     };
     textPanelRefresh = update;
     ta.oninput = () => {
-      slots[selected] = ta.value.trim() === '' ? null : { type: 'text', text: ta.value, font: curFont(), frame: null };
+      slots[selected] = ta.value.trim() === '' ? null : { type: 'text', text: ta.value, font: curFont(), size: (slots[selected] && isNum(slots[selected].size)) ? slots[selected].size : textSize, sticky: slots[selected] ? stickyOf(slots[selected]) : stickyEdge, align: slots[selected] ? alignOf(slots[selected]) : textAlign, valign: slots[selected] ? valignOf(slots[selected]) : textValign, frame: null };
       save(); update(); renderNote(selected); renderList();
     };
     fbtn.onclick = () => { panelView = 'font'; renderPanel(); };
+    tsize.oninput = () => {
+      textSize = parseFloat(tsize.value);
+      if (slots[selected]) slots[selected].size = textSize;
+      update(); renderNote(selected);
+    };
+    tsize.onchange = save;
+    $('algh').onclick = e => { const b = e.target.closest('button'); if (!b) return; textAlign = b.dataset.a; if (slots[selected]) slots[selected].align = textAlign; save(); update(); renderNote(selected); };
+    $('algv').onclick = e => { const b = e.target.closest('button'); if (!b) return; textValign = b.dataset.a; if (slots[selected]) slots[selected].valign = textValign; save(); update(); renderNote(selected); };
     $('btnClear').onclick = () => { slots[selected] = null; save(); renderPanel(); renderAll(); };
     $('btnDone').onclick = closeEditor;
     update();
@@ -617,9 +727,9 @@
   function renderPhotoPanel(seg) {
     const slot = slots[selected];
     panelBody.innerHTML = seg +
-      '<div class="crop" id="crop">' +
+      stickyHTML('<div class="crop" id="crop">' +
         (slot ? '<img id="cropImg" alt="Photo preview" draggable="false">' : '<div class="empty-msg">No photo yet</div>') +
-      '</div>' +
+      '</div>') +
       (slot ? (
         '<div class="row"><label for="zoom">Zoom</label><input type="range" id="zoom" min="1" max="' + MAX_ZOOM + '" step="0.01" value="' + slot.scale + '"></div>' +
         '<p class="tip">Drag the photo to reposition it. Scroll or pinch to zoom.</p>'
@@ -630,6 +740,7 @@
         '<button class="btn" id="btnDone">Done</button>' +
       '</div>';
 
+    wireEdges();
     $('btnChoose').onclick = () => { fileInput.value = ''; fileInput.click(); };
     $('btnDone').onclick = closeEditor;
     if (slot) {
@@ -689,7 +800,7 @@
       c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
       c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
-      slots[selected] = { type: 'image', src: c.toDataURL('image/jpeg', 0.88), scale: 1, ox: 0, oy: 0, frame: null, filter: null };
+      slots[selected] = { type: 'image', src: c.toDataURL('image/jpeg', 0.88), scale: 1, ox: 0, oy: 0, sticky: slots[selected] ? stickyOf(slots[selected]) : stickyEdge, frame: null, filter: null };
       save(); renderPanel(); renderAll();
     };
     im.onerror = () => { URL.revokeObjectURL(url); toast('That file could not be read as an image.'); };
@@ -732,7 +843,9 @@
         const fid = fontOf(slots[i].font);
         await ensureFont(fid);
         ctx.save(); ctx.beginPath(); ctx.rect(x, y, full, full); ctx.clip();
-        drawLines(ctx, wrapText(slots[i].text, fid), fid, DPI / PX, x, y);
+        ctx.translate(x + full / 2, y + full / 2); ctx.rotate(rotDeg(slots[i]) * Math.PI / 180); ctx.translate(-(x + full / 2), -(y + full / 2));
+        const pt = sizeOf({ text: slots[i].text, font: fid, size: slots[i].size });
+        drawLines(ctx, wrapText(slots[i].text, fid, pt), fid, DPI / PX, x, y, pt, alignOf(slots[i]), valignOf(slots[i]));
         ctx.restore();
       } else if (slots[i]) {
         const slot0 = slots[i], im = await loadImg(slot0.src);
@@ -741,6 +854,7 @@
         const base = Math.max(S / im.naturalWidth, S / im.naturalHeight);
         const dw = im.naturalWidth * base * slot.scale, dh = im.naturalHeight * base * slot.scale;
         ctx.save(); ctx.beginPath(); ctx.rect(ix, iy, S, S); ctx.clip();
+        ctx.translate(x + full / 2, y + full / 2); ctx.rotate(rotDeg(slots[i]) * Math.PI / 180); ctx.translate(-(x + full / 2), -(y + full / 2));
         ctx.drawImage(im, ix + (S - dw) / 2 + slot.ox * S, iy + (S - dh) / 2 + slot.oy * S, dw, dh);
         ctx.restore();
       }
@@ -817,22 +931,26 @@
         if (slot.type === 'text') {
           const fid = fontOf(slot.font);
           await ensureFont(fid);
-          const lines = wrapText(slot.text, fid);
-          const nx = p.x * 72, ny = PH - (p.y + NOTE) * 72, pad = TEXT_PAD_IN * 72, lead = TEXT_PT * TEXT_LEAD;
+          const pt = sizeOf({ text: slot.text, font: fid, size: slot.size });
+          const lines = wrapText(slot.text, fid, pt);
+          const nx = p.x * 72, ny = PH - (p.y + NOTE) * 72, pad = TEXT_PAD_IN * 72, lead = pt * TEXT_LEAD;
+          const al = alignOf(slot), va = valignOf(slot);
+          const rot = pdfRot((p.x + NOTE / 2) * 72, PH - (p.y + NOTE / 2) * 72, rotDeg(slot));
           if (fid === 'times') {                                   // standard PDF font: real, selectable text
-            c += 'q ' + f2(nx) + ' ' + f2(ny) + ' ' + f2(NOTE * 72) + ' ' + f2(NOTE * 72) + ' re W n 0 g BT /F4 ' + TEXT_PT + ' Tf ' + f2(lead) + ' TL ' +
-                 f2(nx + pad) + ' ' + f2(PH - p.y * 72 - (TEXT_PAD_IN * PX + baselinePx('times')) * 0.75) + ' Td\n';
-            lines.forEach(ln => { c += '(' + pdfText(ln) + ') Tj T*\n'; });
-            c += 'ET Q\n';
+            c += 'q ' + f2(nx) + ' ' + f2(ny) + ' ' + f2(NOTE * 72) + ' ' + f2(NOTE * 72) + ' re W n 0 g ' + rot + '\n';
+            layoutLines(lines, fid, pt, al, va).forEach(l => {
+              if (l.t) c += 'BT /F4 ' + pt + ' Tf 1 0 0 1 ' + f2(nx + l.x * 0.75) + ' ' + f2(PH - p.y * 72 - l.y * 0.75) + ' Tm (' + pdfText(l.t) + ') Tj ET\n';
+            });
+            c += 'Q\n';
           } else {                                                 // web font: draw the note as a 300 dpi image
             const N = Math.round(NOTE * 300), cv = document.createElement('canvas');
             cv.width = N; cv.height = N;
             const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, N, N);
-            drawLines(cx, lines, fid, 300 / PX, 0, 0);
+            drawLines(cx, lines, fid, 300 / PX, 0, 0, pt, al, va);
             imgs.push({ bytes: dataUrlBytes(cv.toDataURL('image/jpeg', 0.95)), w: N, h: N, cs: 'DeviceRGB' });
-            c += 'q ' + f2(NOTE * 72) + ' 0 0 ' + f2(NOTE * 72) + ' ' + f2(nx) + ' ' + f2(ny) + ' cm /Im' + (imgs.length - 1) + ' Do Q\n';
+            c += 'q ' + rot + f2(NOTE * 72) + ' 0 0 ' + f2(NOTE * 72) + ' ' + f2(nx) + ' ' + f2(ny) + ' cm /Im' + (imgs.length - 1) + ' Do Q\n';
           }
-          debug.push('slot ' + (i + 1) + ': text, ' + FONT_BY_ID[fid].name + ', ' + lines.length + ' lines');
+          debug.push('slot ' + (i + 1) + ': text, ' + FONT_BY_ID[fid].name + ', ' + pt + 'pt, ' + lines.length + ' lines');
           continue;
         }
         const fin = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
@@ -851,7 +969,7 @@
         const left = ix + (S - dw) / 2 + ox * S, topY = iy + (S - dh) / 2 + oy * S;
         debug.push('slot ' + (i + 1) + ': ' + info.w + 'x' + info.h + ', ' + Math.round(bytes.length / 1024) + 'KB, zoom ' + sc.toFixed(2) + ', pan ' + ox.toFixed(2) + '/' + oy.toFixed(2));
         imgs.push({ bytes, w: info.w, h: info.h, cs: info.n === 1 ? 'DeviceGray' : 'DeviceRGB' });
-        c += 'q ' + f2(ix * 72) + ' ' + f2(PH - (iy + S) * 72) + ' ' + f2(S * 72) + ' ' + f2(S * 72) + ' re W n ' +
+        c += 'q ' + f2(ix * 72) + ' ' + f2(PH - (iy + S) * 72) + ' ' + f2(S * 72) + ' ' + f2(S * 72) + ' re W n ' + pdfRot((p.x + NOTE / 2) * 72, PH - (p.y + NOTE / 2) * 72, rotDeg(slot)) +
              f2(dw * 72) + ' 0 0 ' + f2(dh * 72) + ' ' + f2(left * 72) + ' ' + f2(PH - (topY + dh) * 72) + ' cm /Im' + (imgs.length - 1) + ' Do Q\n';
       }
     }
@@ -918,7 +1036,7 @@
     if (e.key !== 'Escape' || selected === null) return;
     if (panelView === 'font') { panelView = 'main'; renderPanel(); } else closeEditor();
   });
-  onFontLoaded = () => { renderAll(); if (textPanelRefresh) textPanelRefresh(); };
+  onFontLoaded = () => { fitCache = new Map(); renderAll(); if (textPanelRefresh) textPanelRefresh(); };
 })();
 </script>
 </body>
