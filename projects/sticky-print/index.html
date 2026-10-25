@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>StickyPrint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aladin&family=Barrio&family=Bytesized&family=Cherry+Bomb+One&family=Cinzel&family=Fontdiner+Swanky&family=Gravitas+One&family=Jim+Nightshade&family=Lobster&family=Monoton&family=New+Rocker&family=Orbitron&family=Pinyon+Script&family=Roboto&family=Rock+3D&family=Rock+Salt&family=Sue+Ellen+Francisco&display=swap">
 <style>
   :root {
     --desk: #dfe4e8;
@@ -97,6 +100,19 @@
     padding: 10px; border: 2px solid var(--ink); border-radius: 6px; background: transparent; color: inherit;
   }
   .tip.warn { color: var(--danger); }
+  .fontrow { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+  .fontrow label { font-weight: 600; min-width: 48px; }
+  .fontrow .btn { flex: 1; text-align: left; font-size: 1.05rem; }
+  .fontlist { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .fontopt { text-align: left; border: 2px solid var(--line); border-radius: 8px; background: transparent; padding: 10px 12px; width: 100%; }
+  .fontopt:hover { border-color: var(--ink); }
+  .fontopt.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .fontopt .fname { display: block; font: 600 .75rem var(--font); color: var(--ink-soft); margin-bottom: 4px; }
+  .fontopt .fsample {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
+    font-size: 14pt; line-height: 1.2; white-space: pre-wrap; overflow-wrap: anywhere; color: inherit;
+  }
+  @media (min-width: 861px) { .panel { max-height: calc(100vh - 32px); overflow-y: auto; } }
   .note.selected { box-shadow: 0 0 0 4px var(--note); z-index: 2; cursor: pointer; }
   .sheet .note { cursor: pointer; }
   .infobar {
@@ -220,7 +236,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.7</h1>
+  <h1>StickyPrint v1.8</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -298,6 +314,7 @@
     try {
       const data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
       if (data && Array.isArray(data.slots)) slots = data.slots.slice(0, 6).concat(Array(6).fill(null)).slice(0, 6);
+      if (typeof data.textFont === 'string') textFont = fontOf(data.textFont);
       // repair any slot saved with broken numbers
       slots.forEach(sl => {
         if (!sl || sl.type === 'text') return;
@@ -308,7 +325,7 @@
     } catch (e) { /* start fresh */ }
   }
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify({ slots })); }
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ slots, textFont })); }
     catch (e) { toast('Browser storage is full. Clear a slot, or use a smaller photo.'); }
   }
   let toastTimer;
@@ -376,29 +393,75 @@
   }
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-  // ---------- Text layout (shared by screen, preview and PDF so line breaks always match) ----------
+  // ---------- Fonts ----------
   const TEXT_PT = 14, TEXT_PAD_IN = 0.125, TEXT_LEAD = 1.2;
   const TEXT_FONT_PX = TEXT_PT * PX / 72;
+  const FONTS = [
+    { id: 'times', name: 'Times New Roman', css: '"Times New Roman", Times, serif', system: true },
+    { id: 'aladin', name: 'Aladin', family: 'Aladin', fb: 'cursive' },
+    { id: 'barrio', name: 'Barrio', family: 'Barrio', fb: 'cursive' },
+    { id: 'bytesized', name: 'Bytesized', family: 'Bytesized', fb: 'sans-serif' },
+    { id: 'cherrybomb', name: 'Cherry Bomb One', family: 'Cherry Bomb One', fb: 'cursive' },
+    { id: 'cinzel', name: 'Cinzel', family: 'Cinzel', fb: 'serif' },
+    { id: 'fontdiner', name: 'Fontdiner Swanky', family: 'Fontdiner Swanky', fb: 'cursive' },
+    { id: 'gravitas', name: 'Gravitas One', family: 'Gravitas One', fb: 'serif' },
+    { id: 'jimnightshade', name: 'Jim Nightshade', family: 'Jim Nightshade', fb: 'cursive' },
+    { id: 'lobster', name: 'Lobster', family: 'Lobster', fb: 'cursive' },
+    { id: 'monoton', name: 'Monoton', family: 'Monoton', fb: 'cursive' },
+    { id: 'newrocker', name: 'New Rocker', family: 'New Rocker', fb: 'cursive' },
+    { id: 'orbitron', name: 'Orbitron', family: 'Orbitron', fb: 'sans-serif' },
+    { id: 'pinyon', name: 'Pinyon Script', family: 'Pinyon Script', fb: 'cursive' },
+    { id: 'roboto', name: 'Roboto', family: 'Roboto', fb: 'sans-serif' },
+    { id: 'rock3d', name: 'Rock 3D', family: 'Rock 3D', fb: 'cursive' },
+    { id: 'rocksalt', name: 'Rock Salt', family: 'Rock Salt', fb: 'cursive' },
+    { id: 'sueellen', name: 'Sue Ellen Francisco', family: 'Sue Ellen Francisco', fb: 'cursive' }
+  ];
+  FONTS.forEach(f => { if (!f.css) f.css = '"' + f.family + '", ' + f.fb; });
+  const FONT_BY_ID = Object.fromEntries(FONTS.map(f => [f.id, f]));
+  const fontOf = id => FONT_BY_ID[id] ? id : 'times';
+  const DEFAULT_SAMPLE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
+  let textFont = 'times';                 // font used for new text notes (last one chosen)
+  let onFontLoaded = null;
+  const fontPromises = {};
+  // Web fonts load lazily. Wait for one before measuring or drawing with it, then re-lay-out when it arrives.
+  function ensureFont(id) {
+    id = fontOf(id); const f = FONT_BY_ID[id];
+    if (f.system || !document.fonts || !document.fonts.load) return Promise.resolve();
+    if (!fontPromises[id]) {
+      const load = document.fonts.load(TEXT_FONT_PX + 'px "' + f.family + '"', 'Abc Lorem ipsum 123').catch(() => {});
+      const timeout = new Promise(r => setTimeout(r, 6000));
+      fontPromises[id] = Promise.race([load, timeout]).then(() => { if (onFontLoaded) onFontLoaded(); });
+    }
+    return fontPromises[id];
+  }
+
+  // ---------- Text layout (shared by screen, preview and PDF so line breaks always match) ----------
   const TEXT_W_PX = NOTE * PX - 2 * TEXT_PAD_IN * PX;           // wrap width in CSS px
-  const TEXT_FAMILY = '"Times New Roman", Times, serif';
   let mctx = null;
-  const measurePx = t => {
+  const useFont = (id, scale) => {
     mctx = mctx || document.createElement('canvas').getContext('2d');
-    mctx.font = TEXT_FONT_PX + 'px ' + TEXT_FAMILY;
-    return mctx.measureText(t).width;
+    mctx.font = (TEXT_FONT_PX * (scale || 1)) + 'px ' + FONT_BY_ID[fontOf(id)].css;
+    return mctx;
   };
-  function wrapText(text) {
+  const measurePx = (t, id) => useFont(id).measureText(t).width;
+  // Distance from the top of a line box to its baseline, in CSS px, matching how the browser centres text in a 1.2 line box
+  function baselinePx(id) {
+    const m = useFont(id).measureText('Hg');
+    const asc = m.fontBoundingBoxAscent || TEXT_FONT_PX * 0.89, desc = m.fontBoundingBoxDescent || TEXT_FONT_PX * 0.22;
+    return (TEXT_FONT_PX * TEXT_LEAD - (asc + desc)) / 2 + asc;
+  }
+  function wrapText(text, fontId) {
     const lines = [];
     String(text || '').split(/\r?\n/).forEach(para => {
       let cur = '';
       para.split(' ').forEach(w => {
         const test = cur ? cur + ' ' + w : w;
-        if (measurePx(test) <= TEXT_W_PX) { cur = test; return; }
+        if (measurePx(test, fontId) <= TEXT_W_PX) { cur = test; return; }
         if (cur) lines.push(cur);
-        if (measurePx(w) <= TEXT_W_PX) { cur = w; return; }
+        if (measurePx(w, fontId) <= TEXT_W_PX) { cur = w; return; }
         let piece = '';                                          // single word wider than the note: break by character
         for (const ch of w) {
-          if (piece && measurePx(piece + ch) > TEXT_W_PX) { lines.push(piece); piece = ch; } else piece += ch;
+          if (piece && measurePx(piece + ch, fontId) > TEXT_W_PX) { lines.push(piece); piece = ch; } else piece += ch;
         }
         cur = piece;
       });
@@ -407,6 +470,13 @@
     return lines;
   }
   const textFits = lines => lines.length * TEXT_FONT_PX * TEXT_LEAD <= NOTE * PX - 2 * TEXT_PAD_IN * PX + 1;
+  // Draw wrapped lines onto a canvas whose origin is a note's top-left corner; scale = canvas px per CSS px
+  function drawLines(ctx, lines, fontId, scale, x, y) {
+    const pad = TEXT_PAD_IN * PX, lh = TEXT_FONT_PX * TEXT_LEAD, base = baselinePx(fontId);
+    ctx.font = (TEXT_FONT_PX * scale) + 'px ' + FONT_BY_ID[fontOf(fontId)].css;
+    ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    lines.forEach((ln, n) => ctx.fillText(ln, x + pad * scale, y + (pad + lh * n + base) * scale));
+  }
 
   function renderNote(i) {
     const el = noteEls[i], slot = slots[i];
@@ -416,7 +486,14 @@
     el.classList.toggle('is-text', !!slot && slot.type === 'text');
     el.classList.toggle('selected', selected === i);
     if (!slot) { img.removeAttribute('src'); txt.textContent = ''; return; }
-    if (slot.type === 'text') { img.removeAttribute('src'); txt.textContent = wrapText(slot.text).join('\n'); return; }
+    if (slot.type === 'text') {
+      const fid = fontOf(slot.font);
+      ensureFont(fid);
+      img.removeAttribute('src');
+      txt.style.fontFamily = FONT_BY_ID[fid].css;
+      txt.textContent = wrapText(slot.text, fid).join('\n');
+      return;
+    }
     txt.textContent = '';
     const go = () => placeImage(img, el.clientWidth, slot);
     if (img.getAttribute('src') !== slot.src) { img.onload = go; img.src = slot.src; } else go();
@@ -440,20 +517,22 @@
 
   // ---------- Editor panel ----------
   const panelTitle = $('panelTitle'), panelBody = $('panelBody');
-  let panelMode = 'photo';
+  let panelMode = 'photo', panelView = 'main', textPanelRefresh = null;
   function openSlot(i) {
-    selected = i;
+    selected = i; panelView = 'main';
     if (slots[i]) panelMode = slots[i].type === 'text' ? 'text' : 'photo';
     document.body.classList.add('editing');
     renderPanel(); renderAll();
   }
   function closeEditor() {
-    selected = null;
+    selected = null; panelView = 'main';
     document.body.classList.remove('editing');
     renderPanel(); renderAll();
   }
 
   function renderPanel() {
+    textPanelRefresh = null;
+    if (selected !== null && panelMode === 'text' && panelView === 'font') { renderFontPicker(); return; }
     if (selected === null) {
       panelTitle.textContent = 'Select a slot';
       panelBody.innerHTML = '<p class="editor-empty">Click a square on the sheet to add a photo or a text note. Everything you see on the sheet is what will print.</p>';
@@ -471,7 +550,7 @@
         if (!confirm('Replace this ' + (cur.type === 'text' ? 'text note' : 'photo') + '?')) return;
         slots[selected] = null; save();
       }
-      panelMode = m; renderPanel(); renderAll();
+      panelMode = m; panelView = 'main'; renderPanel(); renderAll();
     });
   }
 
@@ -480,27 +559,59 @@
     panelBody.innerHTML = seg +
       '<div class="tframe"><div class="text" id="tprev"></div></div>' +
       '<textarea id="ttext" placeholder="Type your note" aria-label="Note text"></textarea>' +
-      '<p class="tip" id="tfit">Times New Roman, 14 pt, aligned top left.</p>' +
+      '<div class="fontrow"><label>Font</label><button class="btn" id="btnFont"></button></div>' +
+      '<p class="tip" id="tfit"></p>' +
       '<div class="stack">' +
         '<button class="btn danger" id="btnClear">Clear this slot</button>' +
         '<button class="btn" id="btnDone">Done</button>' +
       '</div>';
-    const ta = $('ttext'), prev = $('tprev'), fit = $('tfit');
+    const ta = $('ttext'), prev = $('tprev'), fit = $('tfit'), fbtn = $('btnFont');
     ta.value = slot ? slot.text : '';
+    const curFont = () => fontOf(slots[selected] ? slots[selected].font : textFont);
     const update = () => {
-      const lines = wrapText(ta.value);
+      const fid = curFont(), f = FONT_BY_ID[fid];
+      ensureFont(fid);
+      const lines = wrapText(ta.value, fid);
+      prev.style.fontFamily = f.css;
       prev.textContent = lines.join('\n');
+      fbtn.textContent = f.name; fbtn.style.fontFamily = f.css;
       const ok = textFits(lines);
-      fit.textContent = ok ? 'Times New Roman, 14 pt, aligned top left.' : 'This is longer than the note. The extra text will not print.';
+      fit.textContent = ok ? f.name + ', 14 pt, aligned top left.' : 'This is longer than the note. The extra text will not print.';
       fit.classList.toggle('warn', !ok);
     };
+    textPanelRefresh = update;
     ta.oninput = () => {
-      slots[selected] = ta.value.trim() === '' ? null : { type: 'text', text: ta.value, frame: null };
+      slots[selected] = ta.value.trim() === '' ? null : { type: 'text', text: ta.value, font: curFont(), frame: null };
       save(); update(); renderNote(selected); renderList();
     };
+    fbtn.onclick = () => { panelView = 'font'; renderPanel(); };
     $('btnClear').onclick = () => { slots[selected] = null; save(); renderPanel(); renderAll(); };
     $('btnDone').onclick = closeEditor;
     update();
+  }
+
+  function renderFontPicker() {
+    panelTitle.textContent = 'Choose a font';
+    const slot = slots[selected];
+    const sample = (slot && slot.text.trim()) ? slot.text : DEFAULT_SAMPLE;
+    const cur = fontOf(slot ? slot.font : textFont);
+    panelBody.innerHTML = '<button class="btn" id="fpBack" style="width:100%">Back</button><div class="fontlist" id="fontList"></div>';
+    const list = $('fontList');
+    FONTS.forEach(f => {
+      const b = document.createElement('button');
+      b.className = 'fontopt' + (f.id === cur ? ' on' : '');
+      b.innerHTML = '<span class="fname"></span><span class="fsample"></span>';
+      b.children[0].textContent = f.name;
+      b.children[1].textContent = sample; b.children[1].style.fontFamily = f.css;
+      b.onclick = () => {
+        textFont = f.id;
+        if (slot && slot.type === 'text') slot.font = f.id;
+        save(); ensureFont(f.id); panelView = 'main'; renderPanel(); renderAll();
+      };
+      list.appendChild(b);
+    });
+    $('fpBack').onclick = () => { panelView = 'main'; renderPanel(); };
+    const on = list.querySelector('.on'); if (on) setTimeout(() => on.scrollIntoView({ block: 'center' }), 0);
   }
 
   function renderPhotoPanel(seg) {
@@ -618,11 +729,10 @@
         ctx.font = 'bold ' + 16 * k + 'px Helvetica, Arial, sans-serif';
         ctx.fillText('Slot ' + (i + 1), x + full / 2, y + full / 2);
       } else if (slots[i] && slots[i].type === 'text') {
-        const lh = TEXT_PT * TEXT_LEAD * DPI / 72, pad = TEXT_PAD_IN * DPI;
+        const fid = fontOf(slots[i].font);
+        await ensureFont(fid);
         ctx.save(); ctx.beginPath(); ctx.rect(x, y, full, full); ctx.clip();
-        ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-        ctx.font = (TEXT_PT * DPI / 72) + 'px ' + TEXT_FAMILY;
-        wrapText(slots[i].text).forEach((ln, n) => ctx.fillText(ln, x + pad, y + pad + lh * n + 0.94 * TEXT_PT * DPI / 72));
+        drawLines(ctx, wrapText(slots[i].text, fid), fid, DPI / PX, x, y);
         ctx.restore();
       } else if (slots[i]) {
         const slot0 = slots[i], im = await loadImg(slot0.src);
@@ -705,13 +815,24 @@
         const slot = slots[i]; if (!slot) continue;
         const p = slotPos(i);
         if (slot.type === 'text') {
-          const lines = wrapText(slot.text);
+          const fid = fontOf(slot.font);
+          await ensureFont(fid);
+          const lines = wrapText(slot.text, fid);
           const nx = p.x * 72, ny = PH - (p.y + NOTE) * 72, pad = TEXT_PAD_IN * 72, lead = TEXT_PT * TEXT_LEAD;
-          c += 'q ' + f2(nx) + ' ' + f2(ny) + ' ' + f2(NOTE * 72) + ' ' + f2(NOTE * 72) + ' re W n 0 g BT /F4 ' + TEXT_PT + ' Tf ' + f2(lead) + ' TL ' +
-               f2(nx + pad) + ' ' + f2(PH - p.y * 72 - pad - 0.94 * TEXT_PT) + ' Td\n';
-          lines.forEach(ln => { c += '(' + pdfText(ln) + ') Tj T*\n'; });
-          c += 'ET Q\n';
-          debug.push('slot ' + (i + 1) + ': text, ' + lines.length + ' lines');
+          if (fid === 'times') {                                   // standard PDF font: real, selectable text
+            c += 'q ' + f2(nx) + ' ' + f2(ny) + ' ' + f2(NOTE * 72) + ' ' + f2(NOTE * 72) + ' re W n 0 g BT /F4 ' + TEXT_PT + ' Tf ' + f2(lead) + ' TL ' +
+                 f2(nx + pad) + ' ' + f2(PH - p.y * 72 - (TEXT_PAD_IN * PX + baselinePx('times')) * 0.75) + ' Td\n';
+            lines.forEach(ln => { c += '(' + pdfText(ln) + ') Tj T*\n'; });
+            c += 'ET Q\n';
+          } else {                                                 // web font: draw the note as a 300 dpi image
+            const N = Math.round(NOTE * 300), cv = document.createElement('canvas');
+            cv.width = N; cv.height = N;
+            const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, N, N);
+            drawLines(cx, lines, fid, 300 / PX, 0, 0);
+            imgs.push({ bytes: dataUrlBytes(cv.toDataURL('image/jpeg', 0.95)), w: N, h: N, cs: 'DeviceRGB' });
+            c += 'q ' + f2(NOTE * 72) + ' 0 0 ' + f2(NOTE * 72) + ' ' + f2(nx) + ' ' + f2(ny) + ' cm /Im' + (imgs.length - 1) + ' Do Q\n';
+          }
+          debug.push('slot ' + (i + 1) + ': text, ' + FONT_BY_ID[fid].name + ', ' + lines.length + ' lines');
           continue;
         }
         const fin = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
@@ -793,7 +914,11 @@
   load(); buildSheet(); renderPanel();
   window.addEventListener('resize', () => { fitSheet(); renderAll(); });
   fitSheet(); renderAll();
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && selected !== null) closeEditor(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || selected === null) return;
+    if (panelView === 'font') { panelView = 'main'; renderPanel(); } else closeEditor();
+  });
+  onFontLoaded = () => { renderAll(); if (textPanelRefresh) textPanelRefresh(); };
 })();
 </script>
 </body>
