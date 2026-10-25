@@ -119,12 +119,8 @@
   @media (min-width: 861px) { .panel { max-height: calc(100vh - 32px); overflow-y: auto; } }
   .note.selected { box-shadow: 0 0 0 4px var(--note); z-index: 2; cursor: pointer; }
   .sheet .note { cursor: pointer; }
-  .infobar {
-    position: absolute; background: #c0c0c0; display: flex; align-items: center; justify-content: center;
-  }
-  .infobar span {
-    writing-mode: vertical-rl; font-size: 11px; color: #333; white-space: nowrap;
-  }
+  .infobar { position: absolute; }
+  .infobar svg { display: block; }
 
   /* Side panel */
   .panel {
@@ -253,7 +249,7 @@
 <body>
 
 <header class="top">
-  <h1>StickyPrint v1.9</h1>
+  <h1>StickyPrint v1.10</h1>
   <div class="actions desktop-actions">
     <button class="btn" id="btnTemplate">Print template</button>
     <button class="btn primary" id="btnPrint">Print sheet</button>
@@ -309,7 +305,12 @@
   const PAGE = { w: 8.5, h: 11 };            // inches (Letter)
   const NOTE = 3;                             // inches (3 x 3 sticky note)
   const COLS = 2, ROWS = 3, GAP = 0.25;       // inches
-  const BAR_W = 0.5, BAR_MARGIN = 0.5;        // gray info bar
+  const INFO_W = 1.3, INFO_MARGIN = 0.25;     // info panel (QR code + disclaimer) at the right of the template
+  const INFO_LEFT = PAGE.w - INFO_MARGIN - INFO_W;
+  const INFO_URL = 'https://www.andrewminchew.com/projects/sticky-print';
+  const INFO_TEXT = 'This template works with Andrew Minchew\u2019s \u201CSticky Print\u201D Project for printing sticky notes using your own printer. Scan the QR code or visit ' + INFO_URL + ' to get started.';
+  // QR code for INFO_URL (version 4, error correction M), 1 = dark module
+  const QR_ROWS = ["111111101101110001111001001111111", "100000101111010010101001101000001", "101110100110100001001000001011101", "101110101001001010010000001011101", "101110100110011001001100101011101", "100000100100101001010100101000001", "111111101010101010101010101111111", "000000001101100001101000000000000", "101101110010001011110101001001011", "100000010100101010111001001101101", "110001110101001011000011010111011", "011011011110111100110001101101001", "001011110000100000110011110111011", "001011011001110010101010110001110", "010111100001101110010000101100100", "100101000000101010101101111101100", "100000101000001100101111011011100", "111011001010100101001001001011011", "001100101010100111001100000110110", "100110000111101100000000110010000", "101000101100110000101100000101110", "110101010001011100111111011001101", "001100111110001011101101111000011", "010000000111001010101010001111001", "101110101011100101010011111110000", "000000001001001111110000100011010", "111111101111000010011111101010000", "100000101101001010011101100011100", "101110100010111101001111111110101", "101110101010101000101011100100001", "101110101100010001001111111101000", "100000100110100111101011111110001", "111111101100111111001101010011100"];
   const LEFT = 0.5;
   const STORE_KEY = 'stickyprint.v1';
   const MAX_DIM = 1200;                       // downscale uploads to keep local storage small
@@ -363,6 +364,51 @@
     const c = i % COLS, r = Math.floor(i / COLS);
     return { x: LEFT + c * (NOTE + GAP), y: TOP + r * (NOTE + GAP) };
   }
+  // Info panel layout in points, relative to the panel's top-left corner. The disclaimer is set vertically
+  // (reading top to bottom, like the old bar) at the largest size that fits beside and below the QR code.
+  let infoCache = null;
+  function infoLayout() {
+    if (infoCache) return infoCache;
+    const W = INFO_W * 72, H = gridH * 72, pad = 7.2, qr = 72, qz = (W - qr) / 2;
+    const regL = pad, regR = W - pad, regT = qz + qr + 8, regB = H - pad;
+    const maxLen = (regB - regT) * 0.97, maxStack = regR - regL;      // 3% safety for font differences
+    const cx = document.createElement('canvas').getContext('2d');
+    const wrap = size => {
+      cx.font = size + 'px Helvetica, Arial, sans-serif';
+      const lines = []; let cur = '';
+      INFO_TEXT.split(' ').forEach(w => {
+        const t = cur ? cur + ' ' + w : w;
+        if (!cur || cx.measureText(t).width <= maxLen) cur = t; else { lines.push(cur); cur = w; }
+      });
+      lines.push(cur);
+      return { lines, widest: Math.max(...lines.map(l => cx.measureText(l).width)) };
+    };
+    let best = null;
+    for (let size = 4; size <= 40; size += 0.25) {
+      const r = wrap(size);
+      if (r.widest <= maxLen && r.lines.length * size * 1.2 <= maxStack) best = { size, lines: r.lines };
+    }
+    if (!best) best = { size: 4, lines: wrap(4).lines };
+    const lh = best.size * 1.2, right = regL + (maxStack + best.lines.length * lh) / 2;
+    infoCache = { W, H, qz, qr, size: best.size,
+      lines: best.lines.map((t, n) => ({ t, x: right - n * lh - 0.9465 * best.size, y: regT })) };
+    return infoCache;
+  }
+  function infoSvg() {
+    const inf = infoLayout(), mod = inf.qr / QR_ROWS.length, esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    let rects = '';
+    QR_ROWS.forEach((row, y) => {
+      const re = /1+/g; let m;
+      while ((m = re.exec(row))) rects += '<rect x="' + (inf.qz + m.index * mod).toFixed(3) + '" y="' + (inf.qz + y * mod).toFixed(3) +
+        '" width="' + (m[0].length * mod + 0.02).toFixed(3) + '" height="' + (mod + 0.02).toFixed(3) + '"/>';
+    });
+    const texts = inf.lines.map(l => '<text transform="translate(' + l.x.toFixed(2) + ' ' + l.y.toFixed(2) + ') rotate(90)">' + esc(l.t) + '</text>').join('');
+    return '<svg viewBox="0 0 ' + inf.W + ' ' + inf.H + '" width="' + INFO_W + 'in" height="' + gridH + 'in" role="img" aria-label="Link to StickyPrint with QR code">' +
+      '<rect x=".5" y=".5" width="' + (inf.W - 1) + '" height="' + (inf.H - 1) + '" fill="#fff" stroke="#444" stroke-width="1" stroke-dasharray="5 3"/>' +
+      '<g fill="#000" shape-rendering="crispEdges">' + rects + '</g>' +
+      '<g font-family="Helvetica, Arial, sans-serif" font-size="' + inf.size + '" fill="#000">' + texts + '</g></svg>';
+  }
+
   function buildSheet() {
     sheet.innerHTML = '';
     for (let i = 0; i < COLS * ROWS; i++) {
@@ -382,9 +428,8 @@
     }
     const bar = document.createElement('div');
     bar.className = 'infobar';
-    bar.style.left = (PAGE.w - BAR_MARGIN - BAR_W) + 'in';
-    bar.style.top = TOP + 'in'; bar.style.width = BAR_W + 'in'; bar.style.height = gridH + 'in';
-    bar.innerHTML = '<span>StickyPrint: print this template, stick notes in the boxes, feed the sheet back in the same way, then print your photos.</span>';
+    bar.style.left = INFO_LEFT + 'in'; bar.style.top = TOP + 'in'; bar.style.width = INFO_W + 'in'; bar.style.height = gridH + 'in';
+    bar.innerHTML = infoSvg();
     sheet.appendChild(bar);
   }
 
@@ -860,12 +905,15 @@
       }
     }
     if (mode === 'template') {
-      const bx = (PAGE.w - BAR_MARGIN - BAR_W) * DPI, by = TOP * DPI;
-      ctx.fillStyle = '#c0c0c0'; ctx.fillRect(bx, by, BAR_W * DPI, gridH * DPI);
-      ctx.save(); ctx.translate(bx + BAR_W * DPI / 2, by + gridH * DPI / 2); ctx.rotate(Math.PI / 2);
-      ctx.fillStyle = '#333'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = 11 * k + 'px Helvetica, Arial, sans-serif';
-      ctx.fillText('StickyPrint: print this template, stick notes in the boxes, feed the sheet back in the same way, then print your photos.', 0, 0);
+      const inf = infoLayout(), sc = DPI / 72, bx = INFO_LEFT * DPI, by = TOP * DPI, mod = inf.qr / QR_ROWS.length;
+      ctx.save();
+      ctx.fillStyle = '#fff'; ctx.fillRect(bx, by, inf.W * sc, inf.H * sc);
+      ctx.strokeStyle = '#444'; ctx.lineWidth = Math.max(sc, DPI < 150 ? 3 : 0); ctx.setLineDash([5 * sc, 3 * sc]);
+      ctx.strokeRect(bx + sc / 2, by + sc / 2, (inf.W - 1) * sc, (inf.H - 1) * sc); ctx.setLineDash([]);
+      ctx.fillStyle = '#000';
+      QR_ROWS.forEach((row, y) => { for (let xx = 0; xx < row.length; xx++) if (row[xx] === '1') ctx.fillRect(bx + (inf.qz + xx * mod) * sc, by + (inf.qz + y * mod) * sc, mod * sc + 0.5, mod * sc + 0.5); });
+      ctx.font = inf.size * sc + 'px Helvetica, Arial, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      inf.lines.forEach(l => { ctx.save(); ctx.translate(bx + l.x * sc, by + l.y * sc); ctx.rotate(Math.PI / 2); ctx.fillText(l.t, 0, 0); ctx.restore(); });
       ctx.restore();
     }
     return c;
@@ -919,11 +967,14 @@
         c += '0 g BT /F2 9.75 Tf ' + f2(cx - measure(t1, 'italic', 9.75) / 2) + ' ' + f2(top - 22) + ' Td (' + t1 + ') Tj ET\n';
         c += '0 g BT /F3 12 Tf ' + f2(cx - measure(t2, 'bold', 12) / 2) + ' ' + f2(top - NOTE * 36 - 4) + ' Td (' + t2 + ') Tj ET\n';
       }
-      const bx = (PAGE.w - BAR_MARGIN - BAR_W) * 72, bw = BAR_W * 72, bh = gridH * 72, by = PH - (TOP + gridH) * 72;
-      c += '0.753 g ' + f2(bx) + ' ' + f2(by) + ' ' + f2(bw) + ' ' + f2(bh) + ' re f\n';
-      const msg = 'StickyPrint: print this template, stick notes in the boxes, feed the sheet back in the same way, then print your photos.';
-      const sz = 8.25, w = measure(msg, '', sz);
-      c += '0.2 g BT /F1 ' + sz + ' Tf 0 -1 1 0 ' + f2(bx + bw / 2 - sz * 0.35) + ' ' + f2(by + bh / 2 + w / 2) + ' Tm (' + msg + ') Tj ET\n';
+      const inf = infoLayout(), bx = INFO_LEFT * 72, by = PH - (TOP + gridH) * 72, mod = inf.qr / QR_ROWS.length;
+      c += 'q 0.27 G 1 w [5 3] 0 d ' + f2(bx + 0.5) + ' ' + f2(by + 0.5) + ' ' + f2(inf.W - 1) + ' ' + f2(inf.H - 1) + ' re S Q\n0 g\n';
+      QR_ROWS.forEach((row, y) => {
+        const re = /1+/g; let m;
+        while ((m = re.exec(row))) c += f2(bx + inf.qz + m.index * mod) + ' ' + f2(by + inf.H - inf.qz - (y + 1) * mod - 0.01) + ' ' + f2(m[0].length * mod + 0.02) + ' ' + f2(mod + 0.02) + ' re\n';
+      });
+      c += 'f\n';
+      inf.lines.forEach(l => { c += 'BT /F1 ' + inf.size + ' Tf 0 -1 1 0 ' + f2(bx + l.x) + ' ' + f2(by + inf.H - l.y) + ' Tm (' + pdfText(l.t) + ') Tj ET\n'; });
     } else {
       for (let i = 0; i < slots.length; i++) {
         const slot = slots[i]; if (!slot) continue;
@@ -984,7 +1035,7 @@
     obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> /XObject << ' + xo + ' >> >> >>');
     const cb = new Uint8Array(c.length); for (let q = 0; q < c.length; q++) cb[q] = c.charCodeAt(q) & 255;
     offsets[4] = len; push('4 0 obj\n<< /Length ' + cb.length + ' >>\nstream\n'); push(cb); push('endstream\nendobj\n');
-    obj(5, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+    obj(5, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
     obj(6, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>');
     obj(7, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
     obj(8, '<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>');
